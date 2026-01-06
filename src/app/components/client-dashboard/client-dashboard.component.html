@@ -1,0 +1,237 @@
+<div class="dashboard-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Gym Tracker</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <a routerLink="/client/dashboard" class="nav-item active">
+        <span>📊 Dashboard</span>
+      </a>
+      <a (click)="goToReport()" class="nav-item">
+        <span>📄 Monthly Report</span>
+      </a>
+      <a (click)="logout()" class="nav-item">
+        <span>🚪 Logout</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <header class="dashboard-header">
+      <h1>Dashboard</h1>
+      <div class="user-info">
+        <span>{{ authService.currentUser()?.email }}</span>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #4CAF50;">✓</div>
+          <div class="stat-info">
+            <div class="stat-value">{{ completionRate() }}%</div>
+            <div class="stat-label">Today's Completion</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #2196F3;">🏋️</div>
+          <div class="stat-info">
+            <div class="stat-value">
+              {{ getPushupsCompleted() }}/{{ getPushupsTarget() }}
+            </div>
+            <div class="stat-label">Push-ups</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #FF9800;">👣</div>
+          <div class="stat-info">
+            <div class="stat-value">
+              {{ getStepsCompleted() }}/{{ getStepsTarget() }}
+            </div>
+            <div class="stat-label">Steps</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: #9C27B0;">⚖️</div>
+          <div class="stat-info">
+            <div class="stat-value">
+              {{ weightHistory().length > 0 ? weightHistory()[weightHistory().length - 1].weight : '--' }} kg
+            </div>
+            <div class="stat-label">Current Weight</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Activity Tracking -->
+      <div class="activity-section">
+        <h2>Daily Activity Tracking</h2>
+        
+        <!-- Workout Goals -->
+        <div class="activity-card">
+          <h3>Workout Goals</h3>
+          <div class="workout-goals">
+            <div class="goal-item">
+              <div class="goal-header">
+                <span class="goal-name">Push-ups</span>
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    [checked]="getPushupsDone()"
+                    (change)="toggleWorkoutDone('pushups')"
+                  />
+                  <span>Done</span>
+                </label>
+              </div>
+              <div class="goal-progress">
+                <input
+                  type="number"
+                  [value]="getPushupsCompleted()"
+                  [max]="getPushupsTarget()"
+                  (input)="updateWorkoutGoal('pushups', +($any($event.target).value))"
+                  class="progress-input"
+                />
+                <span class="goal-target">/ {{ getPushupsTarget() }}</span>
+              </div>
+            </div>
+
+            <div class="goal-item">
+              <div class="goal-header">
+                <span class="goal-name">Steps</span>
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    [checked]="getStepsDone()"
+                    (change)="toggleWorkoutDone('steps')"
+                  />
+                  <span>Done</span>
+                </label>
+              </div>
+              <div class="goal-progress">
+                <input
+                  type="number"
+                  [value]="getStepsCompleted()"
+                  [max]="getStepsTarget()"
+                  (input)="updateWorkoutGoal('steps', +($any($event.target).value))"
+                  class="progress-input"
+                />
+                <span class="goal-target">/ {{ getStepsTarget() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meal Tracking -->
+        <div class="activity-card">
+          <h3>Meal Tracking</h3>
+          <div class="meals-grid">
+            <div class="meal-item">
+              <label class="checkbox-label large">
+                <input
+                  type="checkbox"
+                  [checked]="getMealCompleted('breakfast')"
+                  (change)="toggleMeal('breakfast')"
+                />
+                <div class="meal-content">
+                  <span class="meal-name">Breakfast</span>
+                  <span class="meal-items">{{ getMealItems('breakfast') }}</span>
+                </div>
+              </label>
+            </div>
+
+            <div class="meal-item">
+              <label class="checkbox-label large">
+                <input
+                  type="checkbox"
+                  [checked]="getMealCompleted('lunch')"
+                  (change)="toggleMeal('lunch')"
+                />
+                <div class="meal-content">
+                  <span class="meal-name">Lunch</span>
+                  <span class="meal-items">{{ getMealItems('lunch') }}</span>
+                </div>
+              </label>
+            </div>
+
+            <div class="meal-item">
+              <label class="checkbox-label large">
+                <input
+                  type="checkbox"
+                  [checked]="getMealCompleted('dinner')"
+                  (change)="toggleMeal('dinner')"
+                />
+                <div class="meal-content">
+                  <span class="meal-name">Dinner</span>
+                  <span class="meal-items">{{ getMealItems('dinner') }}</span>
+                </div>
+              </label>
+            </div>
+
+            <div class="meal-item">
+              <label class="checkbox-label large">
+                <input
+                  type="checkbox"
+                  [checked]="getMealCompleted('snacks')"
+                  (change)="toggleMeal('snacks')"
+                />
+                <div class="meal-content">
+                  <span class="meal-name">Snacks</span>
+                  <span class="meal-items">{{ getMealItems('snacks') }}</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily Weight Input -->
+        <div class="activity-card">
+          <h3>Daily Weight</h3>
+          <div class="weight-input-section">
+            <input
+              type="number"
+              [(ngModel)]="dailyWeight"
+              name="dailyWeight"
+              placeholder="Enter today's weight (kg)"
+              class="weight-input"
+            />
+            <button (click)="saveWeight()" class="btn-save" [disabled]="!dailyWeight()">
+              Save Weight
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Charts -->
+      <div class="charts-section">
+        <div class="chart-card">
+          <h3>Weight Progress</h3>
+          <div class="chart-container">
+            @if (weightHistory().length > 0) {
+              <div class="simple-chart">
+                @for (point of weightHistory(); track point.date) {
+                  <div class="chart-bar" [style.height.%]="getBarHeight(point.weight)">
+                    <span class="chart-value">{{ point.weight }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="no-data">No weight data yet. Start tracking your weight!</p>
+            }
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>Daily Completion Rate</h3>
+          <div class="completion-chart">
+            <div class="completion-circle" [style.background]="'conic-gradient(#4CAF50 ' + completionRate() + '%, #e0e0e0 0%)'">
+              <div class="completion-inner">
+                <span class="completion-value">{{ completionRate() }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

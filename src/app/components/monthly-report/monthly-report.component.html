@@ -1,0 +1,84 @@
+<div class="report-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Gym Tracker</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <a (click)="goBack()" class="nav-item">
+        <span>📊 Dashboard</span>
+      </a>
+      <a class="nav-item active">
+        <span>📄 Monthly Report</span>
+      </a>
+      <a (click)="authService.logout()" class="nav-item">
+        <span>🚪 Logout</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <header class="report-header">
+      <h1>Monthly Report</h1>
+      <div class="month-selector">
+        <span>{{ currentMonth() }}</span>
+      </div>
+    </header>
+
+    <div class="report-content">
+      @if (reportData()) {
+        <div class="report-card">
+          <h2>Weight Summary</h2>
+          <div class="stats-row">
+            <div class="stat-box">
+              <div class="stat-label">Starting Weight</div>
+              <div class="stat-value">{{ reportData()!.startWeight }} kg</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Ending Weight</div>
+              <div class="stat-value">{{ reportData()!.endWeight }} kg</div>
+            </div>
+            <div class="stat-box" [class.positive]="reportData()!.weightChange < 0" [class.negative]="reportData()!.weightChange > 0">
+              <div class="stat-label">Weight Change</div>
+              <div class="stat-value">
+                {{ reportData()!.weightChange > 0 ? '+' : '' }}{{ reportData()!.weightChange.toFixed(1) }} kg
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-card">
+          <h2>Activity Summary</h2>
+          <div class="stats-row">
+            <div class="stat-box">
+              <div class="stat-label">Workouts Completed</div>
+              <div class="stat-value">{{ reportData()!.totalWorkouts }}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Meals Completed</div>
+              <div class="stat-value">{{ reportData()!.totalMeals }}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Overall Completion Rate</div>
+              <div class="stat-value">{{ reportData()!.completionRate }}%</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Days Tracked</div>
+              <div class="stat-value">{{ reportData()!.daysTracked }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-actions">
+          <button (click)="downloadPDF()" class="btn-download">
+            📥 Download PDF Report
+          </button>
+        </div>
+      } @else {
+        <div class="no-data">
+          <p>No data available for this month. Start tracking your activities!</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+

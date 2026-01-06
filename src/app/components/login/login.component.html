@@ -1,0 +1,235 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>{{ isSignup() ? 'Create Account' : 'Welcome Back' }}</h1>
+      <p class="subtitle">{{ isSignup() ? 'Sign up to get started' : 'Sign in to your account' }}</p>
+    </div>
+
+    @if (!isSignup()) {
+      <div class="role-selection">
+        <label class="role-label">I am a:</label>
+        <div class="role-options">
+          <button
+            type="button"
+            class="role-option"
+            [class.selected]="selectedRole() === 'client'"
+            (click)="selectRole('client')"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Gym Member</span>
+          </button>
+          <button
+            type="button"
+            class="role-option"
+            [class.selected]="selectedRole() === 'admin'"
+            (click)="selectRole('admin')"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Gym Trainer</span>
+          </button>
+        </div>
+      </div>
+    }
+
+    <form (ngSubmit)="onSubmit()" class="login-form">
+      @if (!isSignup() && selectedRole() === 'admin') {
+        <div class="dev-credentials">
+          <div class="dev-info">
+            <strong>Demo Credentials:</strong>
+            <div class="cred-item">
+              <span class="cred-role">Gym Trainer:</span>
+              <span class="cred-value">admin / admin123</span>
+              <button type="button" (click)="fillCredentials()" class="fill-btn">Fill</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (isSignup()) {
+        <div class="form-group">
+          <label for="fullName">Full Name *</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input
+              type="text"
+              id="fullName"
+              [(ngModel)]="fullName"
+              name="fullName"
+              placeholder="John Doe"
+              required
+            />
+          </div>
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="email">{{ isSignup() || selectedRole() === 'client' ? 'Email Address' : 'Username' }} *</label>
+        <div class="input-wrapper">
+          @if (isSignup() || selectedRole() === 'client') {
+            <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+          } @else {
+            <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          }
+          <input
+            [type]="isSignup() || selectedRole() === 'client' ? 'email' : 'text'"
+            id="email"
+            [(ngModel)]="email"
+            name="email"
+            [placeholder]="isSignup() || selectedRole() === 'client' ? 'you@example.com' : 'Enter username'"
+            required
+          />
+        </div>
+      </div>
+
+      @if (isSignup()) {
+        <div class="form-row">
+          <div class="form-group">
+            <label for="age">Age *</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <input
+                type="number"
+                id="age"
+                [(ngModel)]="age"
+                name="age"
+                placeholder="25"
+                min="1"
+                max="120"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number *</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <input
+                type="tel"
+                id="phoneNumber"
+                [(ngModel)]="phoneNumber"
+                name="phoneNumber"
+                placeholder="+1234567890"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="address">Address *</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <input
+              type="text"
+              id="address"
+              [(ngModel)]="address"
+              name="address"
+              placeholder="123 Main St, City, State"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sexuality">Sexuality *</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <select
+              id="sexuality"
+              [(ngModel)]="sexuality"
+              name="sexuality"
+              required
+            >
+              <option value="">Select...</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+          </div>
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="password">Password *</label>
+        <div class="input-wrapper">
+          <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <input
+            type="password"
+            id="password"
+            [(ngModel)]="password"
+            name="password"
+            [placeholder]="isSignup() ? 'Create a password' : 'Enter your password'"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="form-options">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="rememberMe"
+            name="rememberMe"
+          />
+          <span>Remember me</span>
+        </label>
+        <a href="#" class="forgot-password">Forgot password?</a>
+      </div>
+
+      @if (error()) {
+        <div class="error-message">{{ error() }}</div>
+      }
+
+      <button type="submit" class="btn-primary">
+        {{ isSignup() ? 'Sign Up' : 'Sign In' }}
+      </button>
+    </form>
+
+    @if (selectedRole() === 'client') {
+      <div class="footer-links">
+        @if (isSignup()) {
+          <p>
+            Already have an account?
+            <a (click)="toggleLogin()" class="link">Sign In</a>
+          </p>
+        } @else {
+          <p>
+            Don't have an account?
+            <a (click)="toggleSignup()" class="link">Sign Up</a>
+          </p>
+        }
+      </div>
+    }
+  </div>
+</div>

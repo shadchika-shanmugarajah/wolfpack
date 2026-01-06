@@ -1,0 +1,150 @@
+<div class="approval-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Gym Tracker</h2>
+      <p class="admin-badge">Admin</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a (click)="goBack()" class="nav-item">
+        <span>📊 Dashboard</span>
+      </a>
+      <a class="nav-item active">
+        <span>✅ Approvals</span>
+      </a>
+      <a (click)="authService.logout()" class="nav-item">
+        <span>🚪 Logout</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <header class="approval-header">
+      <h1>Client Approval</h1>
+      <div class="pending-badge">
+        {{ pendingClients().length }} Pending
+      </div>
+    </header>
+
+    <div class="approval-content">
+      <div class="clients-list">
+        <h2>Pending Clients</h2>
+        @if (pendingClients().length === 0) {
+          <div class="empty-state">
+            <p>No pending client requests</p>
+          </div>
+        } @else {
+          @for (client of pendingClients(); track client.id) {
+            <div
+              class="client-card"
+              [class.active]="selectedClient()?.id === client.id"
+              (click)="selectClient(client)"
+            >
+              <div class="client-info">
+                <div class="client-email">{{ client.email }}</div>
+                <div class="client-status pending">Pending Approval</div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      @if (selectedClient() && clientProfile()) {
+        <div class="client-details">
+          <h2>Client Details</h2>
+          
+          <div class="detail-section">
+            <h3>Personal Information</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="label">Full Name:</span>
+                <span class="value">{{ selectedClient()!.fullName || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">Email:</span>
+                <span class="value">{{ selectedClient()!.email }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">Age:</span>
+                <span class="value">{{ selectedClient()!.age || 'N/A' }} years</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">Phone Number:</span>
+                <span class="value">{{ selectedClient()!.phoneNumber || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">Address:</span>
+                <span class="value">{{ selectedClient()!.address || 'N/A' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">Sexuality:</span>
+                <span class="value">{{ selectedClient()!.sexuality || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h3>Body Measurements</h3>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="label">Weight:</span>
+                <span class="value">{{ clientProfile()!.weight }} kg</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">Height:</span>
+                <span class="value">{{ clientProfile()!.height }} cm</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">BMI:</span>
+                <span class="value" [style.color]="getBMIColor(clientProfile()!.bmi)">
+                  {{ clientProfile()!.bmi }} ({{ getBMICategory(clientProfile()!.bmi) }})
+                </span>
+              </div>
+            </div>
+          </div>
+
+          @if (clientProfile()!.allergies.length > 0) {
+            <div class="detail-section">
+              <h3>Allergies</h3>
+              <div class="allergy-list">
+                @for (allergy of clientProfile()!.allergies; track allergy) {
+                  <span class="allergy-tag warning">{{ allergy }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          @if (clientProfile()!.medicalConditions) {
+            <div class="detail-section">
+              <h3>Medical Conditions</h3>
+              <p class="detail-text">{{ clientProfile()!.medicalConditions }}</p>
+            </div>
+          }
+
+          @if (clientProfile()!.foodPreferences) {
+            <div class="detail-section">
+              <h3>Food Preferences</h3>
+              <p class="detail-text">{{ clientProfile()!.foodPreferences }}</p>
+            </div>
+          }
+
+          <div class="action-buttons">
+            <button (click)="assignPlans()" class="btn-approve">
+              ✓ Approve & Assign Plans
+            </button>
+            <button (click)="approveClient()" class="btn-approve-secondary">
+              ✓ Approve Only
+            </button>
+            <button (click)="rejectClient()" class="btn-reject">
+              ✗ Reject
+            </button>
+          </div>
+        </div>
+      } @else if (selectedClient()) {
+        <div class="client-details">
+          <p>Loading client profile...</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+

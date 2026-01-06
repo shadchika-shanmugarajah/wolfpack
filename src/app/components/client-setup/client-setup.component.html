@@ -1,0 +1,214 @@
+<div class="setup-container">
+  <header class="setup-header">
+    <div class="header-left">
+      <div class="profile-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1>Welcome, member!</h1>
+        <p>Let's set up your profile</p>
+      </div>
+    </div>
+    <a (click)="logout()" class="logout-link">
+      Logout
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6"></path>
+      </svg>
+    </a>
+  </header>
+
+  <div class="setup-card">
+    <h2>Complete Your Profile</h2>
+    <p class="subtitle">Help us understand your fitness journey better by providing some basic information.</p>
+
+    <form (ngSubmit)="onSubmit()" class="setup-form">
+      <!-- Body Measurements Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+          </div>
+          <h3>Body Measurements</h3>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="weight">Weight (kg) *</label>
+            <input
+              type="number"
+              id="weight"
+              [(ngModel)]="weight"
+              name="weight"
+              placeholder="50"
+              min="1"
+              step="0.1"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="height">Height (cm) *</label>
+            <input
+              type="number"
+              id="height"
+              [(ngModel)]="height"
+              name="height"
+              placeholder="153"
+              min="1"
+              required
+            />
+          </div>
+        </div>
+
+        @if (bmi()) {
+          <div class="bmi-display">
+            <div class="bmi-header">
+              <span class="bmi-label">Your BMI</span>
+            </div>
+            <div class="bmi-content">
+              <div class="bmi-value-wrapper">
+                <span class="bmi-value" [style.color]="bmiCategory()?.color">{{ bmi() }}</span>
+                <span class="bmi-category" [style.background]="bmiCategory()?.color">
+                  {{ bmiCategory()?.label }}
+                </span>
+              </div>
+              <div class="bmi-progress-bar">
+                <div class="bmi-segments">
+                  <div class="bmi-segment">
+                    <div class="segment-fill" [style.width.%]="bmiProgress().underweight"></div>
+                    <span class="segment-label">Underweight (&lt;18.5)</span>
+                  </div>
+                  <div class="bmi-segment">
+                    <div class="segment-fill" [style.width.%]="bmiProgress().normal"></div>
+                    <span class="segment-label">Normal (18.5-25)</span>
+                  </div>
+                  <div class="bmi-segment">
+                    <div class="segment-fill" [style.width.%]="bmiProgress().overweight"></div>
+                    <span class="segment-label">Overweight (25-30)</span>
+                  </div>
+                  <div class="bmi-segment">
+                    <div class="segment-fill" [style.width.%]="bmiProgress().obese"></div>
+                    <span class="segment-label">Obese (&gt;30)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Health Information Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <h3>Health Information</h3>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [checked]="hasAllergies()"
+              (change)="hasAllergies.set(!hasAllergies())"
+            />
+            <span>I have food allergies</span>
+          </label>
+        </div>
+
+        @if (hasAllergies()) {
+          <div class="allergy-section">
+            <div class="checkbox-grid">
+              @for (allergy of commonAllergies; track allergy.name) {
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [checked]="allergy.checked()"
+                    (change)="toggleAllergy(allergy)"
+                  />
+                  <span>{{ allergy.name }}</span>
+                </label>
+              }
+            </div>
+            <div class="form-group">
+              <label for="customAllergies">Other allergies (comma separated)</label>
+              <input
+                type="text"
+                id="customAllergies"
+                [(ngModel)]="customAllergies"
+                name="customAllergies"
+                placeholder="e.g., Peanuts, Dairy, Gluten (comma separated)"
+                class="custom-input"
+              />
+            </div>
+          </div>
+        }
+
+        <div class="form-group">
+          <label for="medical">Medical Conditions (Optional)</label>
+          <textarea
+            id="medical"
+            [(ngModel)]="medicalConditions"
+            name="medicalConditions"
+            placeholder="Any medical conditions we should be aware of?"
+            rows="4"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Food Preferences Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 13h12M6 13a2 2 0 1 0 0-4h12a2 2 0 1 0 0 4M6 13a2 2 0 0 0 0 4h12a2 2 0 0 0 0-4"></path>
+            </svg>
+          </div>
+          <h3>Food Preferences</h3>
+        </div>
+
+        <div class="checkbox-grid">
+          @for (pref of commonFoodPreferences; track pref.name) {
+            <label class="checkbox-item">
+              <input
+                type="checkbox"
+                [checked]="pref.checked()"
+                (change)="toggleFoodPreference(pref)"
+              />
+              <span>{{ pref.name }}</span>
+            </label>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="customFoodPrefs">Other preferences (comma separated)</label>
+          <input
+            type="text"
+            id="customFoodPrefs"
+            [(ngModel)]="customFoodPreferences"
+            name="customFoodPreferences"
+            placeholder="e.g., Vegetarian, Vegan, Keto, etc."
+            class="custom-input"
+          />
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <p class="required-note">* Required fields</p>
+        <button type="submit" class="btn-submit" [disabled]="!weight() || !height()">
+          Submit Profile
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

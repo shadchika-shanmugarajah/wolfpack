@@ -1,0 +1,146 @@
+<div class="workout-plan-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Gym Tracker</h2>
+      <p class="admin-badge">Admin</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a (click)="router.navigate(['/admin/dashboard'])" class="nav-item" style="cursor: pointer;">
+        <span>📊 Dashboard</span>
+      </a>
+      <a class="nav-item active">
+        <span>🏋️ Workout Plan</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <header class="plan-header">
+      <h1>Assign Workout Plan</h1>
+      <div class="client-info">Client: {{ clientEmail() }}</div>
+    </header>
+
+    <div class="plan-content">
+      <div class="plan-section">
+        <h2>Daily Steps Target</h2>
+        <div class="steps-input">
+          <input
+            type="number"
+            [(ngModel)]="stepsTarget"
+            name="stepsTarget"
+            min="0"
+            class="steps-field"
+          />
+          <span>steps per day</span>
+        </div>
+      </div>
+
+      <div class="plan-section">
+        <h2>Exercises</h2>
+        <div class="common-exercises">
+          @for (exercise of commonExercises; track exercise) {
+            <button
+              (click)="addExercise(exercise)"
+              class="exercise-btn"
+              [disabled]="isExerciseAdded(exercise)"
+            >
+              {{ exercise }}
+            </button>
+          }
+        </div>
+
+        <div class="exercises-list">
+          @if (exercises().length === 0) {
+            <p class="no-exercises">No exercises added yet. Select from above or add custom exercise.</p>
+          } @else {
+            @for (exercise of exercises(); track $index) {
+              <div class="exercise-item">
+                <div class="exercise-header">
+                  <input
+                    type="text"
+                    [value]="exercise.name"
+                    (input)="updateExercise($index, 'name', $any($event.target).value)"
+                    class="exercise-name"
+                  />
+                  <button (click)="removeExercise($index)" class="remove-btn">×</button>
+                </div>
+                <div class="exercise-details">
+                  <div class="detail-group">
+                    <label>Reps:</label>
+                    <input
+                      type="number"
+                      [value]="exercise.reps"
+                      (input)="updateExercise($index, 'reps', +$any($event.target).value)"
+                      min="1"
+                      class="detail-input"
+                    />
+                  </div>
+                  <div class="detail-group">
+                    <label>Sets:</label>
+                    <input
+                      type="number"
+                      [value]="exercise.sets"
+                      (input)="updateExercise($index, 'sets', +$any($event.target).value)"
+                      min="1"
+                      class="detail-input"
+                    />
+                  </div>
+                  <div class="detail-group">
+                    <label>Frequency:</label>
+                    <select
+                      [value]="exercise.frequency"
+                      (change)="updateExercise($index, 'frequency', $any($event.target).value)"
+                      class="detail-select"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <div class="custom-exercise">
+          <h3>Add Custom Exercise</h3>
+          <div class="custom-input">
+            <input
+              type="text"
+              [(ngModel)]="newExerciseName"
+              name="newExerciseName"
+              placeholder="Exercise name"
+              class="exercise-input"
+            />
+            <input
+              type="number"
+              [(ngModel)]="newExerciseReps"
+              name="newExerciseReps"
+              placeholder="Reps"
+              min="1"
+              class="exercise-input-small"
+            />
+            <input
+              type="number"
+              [(ngModel)]="newExerciseSets"
+              name="newExerciseSets"
+              placeholder="Sets"
+              min="1"
+              class="exercise-input-small"
+            />
+            <select [(ngModel)]="newExerciseFrequency" name="newExerciseFrequency" class="exercise-select">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+            <button (click)="addCustomExercise()" class="btn-add">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button (click)="savePlan()" class="btn-save">Save Workout Plan</button>
+      </div>
+    </div>
+  </div>
+</div>
+

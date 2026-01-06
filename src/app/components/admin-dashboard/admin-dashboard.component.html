@@ -1,0 +1,153 @@
+<div class="admin-dashboard-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-section">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6.5 6.5h11v11h-11z"></path>
+            <path d="M6.5 6.5l5.5 5.5 5.5-5.5"></path>
+            <path d="M12 12l5.5 5.5"></path>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h2>GymTrainer</h2>
+          <p>Admin Portal</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="user-profile-section">
+      <div class="user-avatar">T</div>
+      <div class="user-details">
+        <div class="user-name">trainer</div>
+        <div class="user-email">{{ authService.currentUser()?.email || 'trainer@gym.com' }}</div>
+      </div>
+      <div class="role-badge">Gym Trainer</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/admin/dashboard" class="nav-item active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/admin/approvals" class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 6v6l4 2"></path>
+        </svg>
+        <span>Pending Approvals</span>
+        @if (pendingCount() > 0) {
+          <span class="badge">{{ pendingCount() }}</span>
+        }
+      </a>
+      <a class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        <span>Client Monitoring</span>
+      </a>
+      <a (click)="logout()" class="nav-item logout">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Logout</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <header class="dashboard-header">
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p class="subtitle">Manage and monitor your gym members</p>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      <div class="stats-grid">
+        <div class="stat-card orange">
+          <div class="stat-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 6v6l4 2"></path>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Pending Approvals</div>
+            <div class="stat-desc">Review and approve new client profiles</div>
+          </div>
+          <div class="stat-value">{{ pendingCount() }}</div>
+        </div>
+
+        <div class="stat-card green">
+          <div class="stat-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Active Members</div>
+            <div class="stat-desc">Monitor and support your clients</div>
+          </div>
+          <div class="stat-value">{{ approvedCount() }}</div>
+        </div>
+
+        <div class="stat-card purple">
+          <div class="stat-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Activity Rate</div>
+            <div class="stat-desc">Active clients this week</div>
+          </div>
+          <div class="stat-value">100%</div>
+        </div>
+      </div>
+
+      <div class="charts-section">
+        <div class="chart-card">
+          <h3>Client Status Distribution</h3>
+          <div class="pie-chart-container">
+            <div class="pie-chart" [style.background]="getPieChartBackground()">
+              <div class="pie-center"></div>
+            </div>
+            <div class="pie-labels">
+              <div class="pie-label approved">
+                Approved: {{ approvedCount() }} ({{ getApprovedPercentage() }}%)
+              </div>
+              <div class="pie-label pending">
+                Pending: {{ pendingCount() }} ({{ getPendingPercentage() }}%)
+              </div>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-dot approved"></span>
+              <span class="legend-label">Approved</span>
+              <div class="legend-value">{{ approvedCount() }}</div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot pending"></span>
+              <span class="legend-label">Pending</span>
+              <div class="legend-value">{{ pendingCount() }}</div>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot rejected"></span>
+              <span class="legend-label">Rejected</span>
+              <div class="legend-value">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

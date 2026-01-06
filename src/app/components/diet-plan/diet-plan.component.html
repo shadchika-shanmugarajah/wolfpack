@@ -1,0 +1,186 @@
+<div class="diet-plan-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Gym Tracker</h2>
+      <p class="admin-badge">Admin</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a (click)="router.navigate(['/admin/dashboard'])" class="nav-item" style="cursor: pointer;">
+        <span>📊 Dashboard</span>
+      </a>
+      <a class="nav-item active">
+        <span>🍽️ Diet Plan</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <header class="plan-header">
+      <h1>Assign Diet Plan</h1>
+      <div class="client-info">Client: {{ clientEmail() }}</div>
+    </header>
+
+    <div class="plan-content">
+      @if (allergies().length > 0) {
+        <div class="allergy-warning">
+          <strong>⚠️ Allergy Alert:</strong> This client has allergies: {{ allergies().join(', ') }}
+        </div>
+      }
+
+      <div class="meal-section">
+        <h2>Breakfast</h2>
+        <div class="food-selection">
+          <div class="common-foods">
+            @for (food of commonFoods.breakfast; track food) {
+              <button
+                (click)="addFood('breakfast', food)"
+                [class.has-allergy]="hasAllergy(food)"
+                class="food-btn"
+                [disabled]="breakfast().includes(food)"
+              >
+                {{ food }}
+                @if (hasAllergy(food)) {
+                  <span class="allergy-icon">⚠️</span>
+                }
+              </button>
+            }
+          </div>
+          <div class="selected-foods">
+            <label>Selected Items:</label>
+            <div class="food-tags">
+              @for (food of breakfast(); track food) {
+                <span class="food-tag">
+                  {{ food }}
+                  <button (click)="removeFood('breakfast', food)" class="remove-btn">×</button>
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-section">
+        <h2>Lunch</h2>
+        <div class="food-selection">
+          <div class="common-foods">
+            @for (food of commonFoods.lunch; track food) {
+              <button
+                (click)="addFood('lunch', food)"
+                [class.has-allergy]="hasAllergy(food)"
+                class="food-btn"
+                [disabled]="lunch().includes(food)"
+              >
+                {{ food }}
+                @if (hasAllergy(food)) {
+                  <span class="allergy-icon">⚠️</span>
+                }
+              </button>
+            }
+          </div>
+          <div class="selected-foods">
+            <label>Selected Items:</label>
+            <div class="food-tags">
+              @for (food of lunch(); track food) {
+                <span class="food-tag">
+                  {{ food }}
+                  <button (click)="removeFood('lunch', food)" class="remove-btn">×</button>
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-section">
+        <h2>Dinner</h2>
+        <div class="food-selection">
+          <div class="common-foods">
+            @for (food of commonFoods.dinner; track food) {
+              <button
+                (click)="addFood('dinner', food)"
+                [class.has-allergy]="hasAllergy(food)"
+                class="food-btn"
+                [disabled]="dinner().includes(food)"
+              >
+                {{ food }}
+                @if (hasAllergy(food)) {
+                  <span class="allergy-icon">⚠️</span>
+                }
+              </button>
+            }
+          </div>
+          <div class="selected-foods">
+            <label>Selected Items:</label>
+            <div class="food-tags">
+              @for (food of dinner(); track food) {
+                <span class="food-tag">
+                  {{ food }}
+                  <button (click)="removeFood('dinner', food)" class="remove-btn">×</button>
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-section">
+        <h2>Snacks</h2>
+        <div class="food-selection">
+          <div class="common-foods">
+            @for (food of commonFoods.snacks; track food) {
+              <button
+                (click)="addFood('snacks', food)"
+                [class.has-allergy]="hasAllergy(food)"
+                class="food-btn"
+                [disabled]="snacks().includes(food)"
+              >
+                {{ food }}
+                @if (hasAllergy(food)) {
+                  <span class="allergy-icon">⚠️</span>
+                }
+              </button>
+            }
+          </div>
+          <div class="selected-foods">
+            <label>Selected Items:</label>
+            <div class="food-tags">
+              @for (food of snacks(); track food) {
+                <span class="food-tag">
+                  {{ food }}
+                  <button (click)="removeFood('snacks', food)" class="remove-btn">×</button>
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="custom-food-section">
+        <h3>Add Custom Food Item</h3>
+        <div class="custom-input">
+          <select [(ngModel)]="selectedMeal" name="selectedMeal" class="meal-select">
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+            <option value="snacks">Snacks</option>
+          </select>
+          <input
+            type="text"
+            [(ngModel)]="newItem"
+            name="newItem"
+            placeholder="Enter food item"
+            class="food-input"
+            (keyup.enter)="addCustomFood()"
+          />
+          <button (click)="addCustomFood()" class="btn-add">Add</button>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button (click)="skip()" class="btn-skip">Skip</button>
+        <button (click)="savePlan()" class="btn-save">Save & Continue to Workout Plan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
