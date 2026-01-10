@@ -52,6 +52,10 @@ export const routes: Routes = [
         loadComponent: () => import('./components/client-approval/client-approval.component').then(m => m.ClientApprovalComponent)
       },
       {
+        path: 'monitoring',
+        loadComponent: () => import('./components/client-monitoring/client-monitoring.component').then(m => m.ClientMonitoringComponent)
+      },
+      {
         path: 'diet-plan/:userId',
         loadComponent: () => import('./components/diet-plan/diet-plan.component').then(m => m.DietPlanComponent)
       },

@@ -33,10 +33,9 @@
           <div class="common-foods">
             @for (food of commonFoods.breakfast; track food) {
               <button
-                (click)="addFood('breakfast', food)"
+                (click)="openFoodDialog('breakfast', food)"
                 [class.has-allergy]="hasAllergy(food)"
                 class="food-btn"
-                [disabled]="breakfast().includes(food)"
               >
                 {{ food }}
                 @if (hasAllergy(food)) {
@@ -48,12 +47,42 @@
           <div class="selected-foods">
             <label>Selected Items:</label>
             <div class="food-tags">
-              @for (food of breakfast(); track food) {
+              @for (food of breakfast(); track $index) {
                 <span class="food-tag">
-                  {{ food }}
-                  <button (click)="removeFood('breakfast', food)" class="remove-btn">×</button>
+                  <button (click)="removeFood('breakfast', $index)" class="remove-btn">×</button>
+                  {{ getFoodDisplay(food) }}
                 </span>
               }
+            </div>
+            @if (breakfast().length > 0) {
+              <div class="meal-calories">Total: {{ getTotalCalories('breakfast') }} calories</div>
+            }
+          </div>
+          <div class="meal-input-container">
+            <div class="meal-input-row">
+              <input
+                type="text"
+                [(ngModel)]="mealInputs.breakfast.name"
+                name="breakfastName"
+                placeholder="Food name (e.g., Banana)"
+                class="meal-food-input"
+              />
+              <input
+                type="text"
+                [(ngModel)]="mealInputs.breakfast.quantity"
+                name="breakfastQuantity"
+                placeholder="Quantity (e.g., 2)"
+                class="meal-quantity-input"
+              />
+              <input
+                type="number"
+                [(ngModel)]="mealInputs.breakfast.calories"
+                name="breakfastCalories"
+                placeholder="Calories"
+                class="meal-calories-input"
+                min="0"
+              />
+              <button (click)="addMealFood('breakfast')" class="btn-meal-add">Add</button>
             </div>
           </div>
         </div>
@@ -65,10 +94,9 @@
           <div class="common-foods">
             @for (food of commonFoods.lunch; track food) {
               <button
-                (click)="addFood('lunch', food)"
+                (click)="openFoodDialog('lunch', food)"
                 [class.has-allergy]="hasAllergy(food)"
                 class="food-btn"
-                [disabled]="lunch().includes(food)"
               >
                 {{ food }}
                 @if (hasAllergy(food)) {
@@ -80,12 +108,42 @@
           <div class="selected-foods">
             <label>Selected Items:</label>
             <div class="food-tags">
-              @for (food of lunch(); track food) {
+              @for (food of lunch(); track $index) {
                 <span class="food-tag">
-                  {{ food }}
-                  <button (click)="removeFood('lunch', food)" class="remove-btn">×</button>
+                  <button (click)="removeFood('lunch', $index)" class="remove-btn">×</button>
+                  {{ getFoodDisplay(food) }}
                 </span>
               }
+            </div>
+            @if (lunch().length > 0) {
+              <div class="meal-calories">Total: {{ getTotalCalories('lunch') }} calories</div>
+            }
+          </div>
+          <div class="meal-input-container">
+            <div class="meal-input-row">
+              <input
+                type="text"
+                [(ngModel)]="mealInputs.lunch.name"
+                name="lunchName"
+                placeholder="Food name (e.g., Banana)"
+                class="meal-food-input"
+              />
+              <input
+                type="text"
+                [(ngModel)]="mealInputs.lunch.quantity"
+                name="lunchQuantity"
+                placeholder="Quantity (e.g., 2)"
+                class="meal-quantity-input"
+              />
+              <input
+                type="number"
+                [(ngModel)]="mealInputs.lunch.calories"
+                name="lunchCalories"
+                placeholder="Calories"
+                class="meal-calories-input"
+                min="0"
+              />
+              <button (click)="addMealFood('lunch')" class="btn-meal-add">Add</button>
             </div>
           </div>
         </div>
@@ -97,10 +155,9 @@
           <div class="common-foods">
             @for (food of commonFoods.dinner; track food) {
               <button
-                (click)="addFood('dinner', food)"
+                (click)="openFoodDialog('dinner', food)"
                 [class.has-allergy]="hasAllergy(food)"
                 class="food-btn"
-                [disabled]="dinner().includes(food)"
               >
                 {{ food }}
                 @if (hasAllergy(food)) {
@@ -112,12 +169,42 @@
           <div class="selected-foods">
             <label>Selected Items:</label>
             <div class="food-tags">
-              @for (food of dinner(); track food) {
+              @for (food of dinner(); track $index) {
                 <span class="food-tag">
-                  {{ food }}
-                  <button (click)="removeFood('dinner', food)" class="remove-btn">×</button>
+                  <button (click)="removeFood('dinner', $index)" class="remove-btn">×</button>
+                  {{ getFoodDisplay(food) }}
                 </span>
               }
+            </div>
+            @if (dinner().length > 0) {
+              <div class="meal-calories">Total: {{ getTotalCalories('dinner') }} calories</div>
+            }
+          </div>
+          <div class="meal-input-container">
+            <div class="meal-input-row">
+              <input
+                type="text"
+                [(ngModel)]="mealInputs.dinner.name"
+                name="dinnerName"
+                placeholder="Food name (e.g., Banana)"
+                class="meal-food-input"
+              />
+              <input
+                type="text"
+                [(ngModel)]="mealInputs.dinner.quantity"
+                name="dinnerQuantity"
+                placeholder="Quantity (e.g., 2)"
+                class="meal-quantity-input"
+              />
+              <input
+                type="number"
+                [(ngModel)]="mealInputs.dinner.calories"
+                name="dinnerCalories"
+                placeholder="Calories"
+                class="meal-calories-input"
+                min="0"
+              />
+              <button (click)="addMealFood('dinner')" class="btn-meal-add">Add</button>
             </div>
           </div>
         </div>
@@ -129,10 +216,9 @@
           <div class="common-foods">
             @for (food of commonFoods.snacks; track food) {
               <button
-                (click)="addFood('snacks', food)"
+                (click)="openFoodDialog('snacks', food)"
                 [class.has-allergy]="hasAllergy(food)"
                 class="food-btn"
-                [disabled]="snacks().includes(food)"
               >
                 {{ food }}
                 @if (hasAllergy(food)) {
@@ -144,12 +230,42 @@
           <div class="selected-foods">
             <label>Selected Items:</label>
             <div class="food-tags">
-              @for (food of snacks(); track food) {
+              @for (food of snacks(); track $index) {
                 <span class="food-tag">
-                  {{ food }}
-                  <button (click)="removeFood('snacks', food)" class="remove-btn">×</button>
+                  <button (click)="removeFood('snacks', $index)" class="remove-btn">×</button>
+                  {{ getFoodDisplay(food) }}
                 </span>
               }
+            </div>
+            @if (snacks().length > 0) {
+              <div class="meal-calories">Total: {{ getTotalCalories('snacks') }} calories</div>
+            }
+          </div>
+          <div class="meal-input-container">
+            <div class="meal-input-row">
+              <input
+                type="text"
+                [(ngModel)]="mealInputs.snacks.name"
+                name="snacksName"
+                placeholder="Food name (e.g., Banana)"
+                class="meal-food-input"
+              />
+              <input
+                type="text"
+                [(ngModel)]="mealInputs.snacks.quantity"
+                name="snacksQuantity"
+                placeholder="Quantity (e.g., 2)"
+                class="meal-quantity-input"
+              />
+              <input
+                type="number"
+                [(ngModel)]="mealInputs.snacks.calories"
+                name="snacksCalories"
+                placeholder="Calories"
+                class="meal-calories-input"
+                min="0"
+              />
+              <button (click)="addMealFood('snacks')" class="btn-meal-add">Add</button>
             </div>
           </div>
         </div>
@@ -166,14 +282,29 @@
           </select>
           <input
             type="text"
-            [(ngModel)]="newItem"
-            name="newItem"
-            placeholder="Enter food item"
+            [(ngModel)]="newItemName"
+            name="newItemName"
+            placeholder="Food name (e.g., Banana)"
             class="food-input"
-            (keyup.enter)="addCustomFood()"
+          />
+          <input
+            type="text"
+            [(ngModel)]="newItemQuantity"
+            name="newItemQuantity"
+            placeholder="Quantity (e.g., 2)"
+            class="food-input quantity-input"
+          />
+          <input
+            type="number"
+            [(ngModel)]="newItemCalories"
+            name="newItemCalories"
+            placeholder="Calories"
+            class="food-input calories-input"
+            min="0"
           />
           <button (click)="addCustomFood()" class="btn-add">Add</button>
         </div>
+        <p class="help-text">Example: Banana, 2, 200 → "Banana 2 (200 calories)"</p>
       </div>
 
       <div class="action-buttons">
@@ -182,5 +313,44 @@
       </div>
     </div>
   </div>
+
+  <!-- Food Dialog -->
+  @if (showFoodDialog().show) {
+    <div class="food-dialog-overlay" (click)="closeFoodDialog()">
+      <div class="food-dialog" (click)="$event.stopPropagation()">
+        <div class="dialog-header">
+          <h3>Add {{ showFoodDialog().foodName }}</h3>
+          <button (click)="closeFoodDialog()" class="close-btn">×</button>
+        </div>
+        <div class="dialog-content">
+          <div class="form-group">
+            <label>Quantity</label>
+            <input
+              type="text"
+              [(ngModel)]="tempFoodInput.quantity"
+              name="tempQuantity"
+              placeholder="e.g., 2"
+              class="dialog-input"
+            />
+          </div>
+          <div class="form-group">
+            <label>Calories</label>
+            <input
+              type="number"
+              [(ngModel)]="tempFoodInput.calories"
+              name="tempCalories"
+              placeholder="e.g., 200"
+              class="dialog-input"
+              min="0"
+            />
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button (click)="closeFoodDialog()" class="btn-cancel">Cancel</button>
+          <button (click)="confirmAddFood()" class="btn-confirm">Add</button>
+        </div>
+      </div>
+    </div>
+  }
 </div>
 

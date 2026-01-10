@@ -1,0 +1,352 @@
+<div class="monitoring-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-section">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6.5 6.5h11v11h-11z"></path>
+            <path d="M6.5 6.5l5.5 5.5 5.5-5.5"></path>
+            <path d="M12 12l5.5 5.5"></path>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h2>GymTrainer</h2>
+          <p>Admin Portal</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="user-profile-section">
+      <div class="user-avatar">T</div>
+      <div class="user-details">
+        <div class="user-name">trainer</div>
+        <div class="user-email">{{ authService.currentUser()?.email || 'admin' }}</div>
+      </div>
+      <div class="role-badge">Gym Trainer</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/admin/dashboard" class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/admin/approvals" class="nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 6v6l4 2"></path>
+        </svg>
+        <span>Pending Approvals</span>
+      </a>
+      <a routerLink="/admin/monitoring" class="nav-item active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        <span>Client Monitoring</span>
+      </a>
+      <a (click)="logout()" class="nav-item logout">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Logout</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <header class="dashboard-header">
+      <button (click)="goBack()" class="back-button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        <span>Back</span>
+      </button>
+      <div>
+        <h1>Client Monitoring</h1>
+        <p class="subtitle">View and manage all approved clients</p>
+      </div>
+    </header>
+
+    <div class="dashboard-content">
+      @if (approvedClients().length === 0) {
+        <div class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <h3>No Approved Clients</h3>
+          <p>There are no approved clients yet. Approve clients from the Pending Approvals page.</p>
+        </div>
+      } @else {
+        <div class="monitoring-layout">
+          <!-- Clients List -->
+          <div class="clients-list">
+            <h3>Approved Clients ({{ approvedClients().length }})</h3>
+            <div class="clients-list-items">
+              @for (client of approvedClients(); track client.id) {
+                <div 
+                  class="client-list-item"
+                  [class.active]="selectedClient()?.id === client.id"
+                  (click)="selectClient(client)"
+                >
+                  <div class="client-avatar-small">
+                    {{ getClientInitials(client) }}
+                  </div>
+                  <div class="client-list-info">
+                    <div class="client-list-name">{{ client.fullName || client.email }}</div>
+                    <div class="client-list-email">{{ client.email }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Client Details -->
+          <div class="client-details-panel">
+            @if (selectedClient()) {
+              @let client = selectedClient()!;
+              <div class="client-card">
+                <div class="client-header">
+                  <div class="client-avatar">
+                    {{ getClientInitials(client) }}
+                  </div>
+                  <div class="client-info">
+                    <h3>{{ client.fullName || client.email }}</h3>
+                    <p class="client-email">{{ client.email }}</p>
+                  </div>
+                  <div class="status-badge approved">Approved</div>
+                </div>
+
+                <div class="client-details">
+                  @if (getClientProfile(client.id)) {
+                    @let profile = getClientProfile(client.id)!;
+                    <div class="detail-row">
+                      <span class="detail-label">📏 Height:</span>
+                      <span class="detail-value">{{ profile.height }} cm</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">⚖️ Weight:</span>
+                      <span class="detail-value">{{ profile.weight }} kg</span>
+                    </div>
+                    <div class="detail-row">
+                      <span class="detail-label">📐 BMI:</span>
+                      <span class="detail-value">{{ profile.bmi.toFixed(1) }}</span>
+                    </div>
+                    @if (client.age) {
+                      <div class="detail-row">
+                        <span class="detail-label">👤 Age:</span>
+                        <span class="detail-value">{{ client.age }} years</span>
+                      </div>
+                    }
+                    @if (client.phoneNumber) {
+                      <div class="detail-row">
+                        <span class="detail-label">📞 Phone:</span>
+                        <span class="detail-value">{{ client.phoneNumber }}</span>
+                      </div>
+                    }
+                    @if (profile.allergies && profile.allergies.length > 0) {
+                      <div class="detail-row">
+                        <span class="detail-label">⚠️ Allergies:</span>
+                        <span class="detail-value">{{ profile.allergies.join(', ') }}</span>
+                      </div>
+                    }
+                    @if (profile.medicalConditions) {
+                      <div class="detail-row">
+                        <span class="detail-label">🏥 Medical Conditions:</span>
+                        <span class="detail-value">{{ profile.medicalConditions }}</span>
+                      </div>
+                    }
+                    @if (profile.foodPreferences) {
+                      <div class="detail-row">
+                        <span class="detail-label">🍽️ Food Preferences:</span>
+                        <span class="detail-value">{{ profile.foodPreferences }}</span>
+                      </div>
+                    }
+                  } @else {
+                    <div class="no-profile">
+                      <p>Profile setup not completed</p>
+                    </div>
+                  }
+                </div>
+
+                <!-- Meal Tracking Section -->
+                <div class="meal-tracking-section">
+                  <h4>📊 Today's Meal Tracking</h4>
+                  
+                  <!-- Calorie Summary -->
+                  <div class="calorie-summary">
+                    <div class="calorie-item">
+                      <span class="calorie-label">Consumed:</span>
+                      <span class="calorie-value consumed">{{ getTotalCaloriesConsumed(client.id) }} cal</span>
+                    </div>
+                    <div class="calorie-item">
+                      <span class="calorie-label">Burned:</span>
+                      <span class="calorie-value burned">{{ getTotalCaloriesBurned(client.id) }} cal</span>
+                    </div>
+                    <div class="calorie-item">
+                      <span class="calorie-label">Net:</span>
+                      <span class="calorie-value net">{{ getTotalCaloriesConsumed(client.id) - getTotalCaloriesBurned(client.id) }} cal</span>
+                    </div>
+                  </div>
+
+                  <!-- Meals -->
+                  <div class="meals-monitoring">
+                    <!-- Breakfast -->
+                    <div class="meal-monitoring-card">
+                      <div class="meal-monitoring-header">
+                        <span class="meal-monitoring-name">🍳 Breakfast</span>
+                        <span class="meal-monitoring-calories">{{ getMealCaloriesConsumed('breakfast', client.id) }} cal</span>
+                      </div>
+                      <div class="meal-items-monitoring">
+                        @for (item of getMealItems('breakfast', client.id); track $index) {
+                          <div class="meal-item-monitoring" [class.prescribed]="isFoodPrescribed(item)" [class.consumed]="isFoodConsumed(item)">
+                            <span class="food-status-icon">
+                              @if (isFoodConsumed(item)) {
+                                ✓
+                              } @else {
+                                ○
+                              }
+                            </span>
+                            <span class="food-name-monitoring">{{ item.name }}{{ item.quantity ? ' ' + item.quantity : '' }}{{ item.calories ? ' (' + item.calories + ' cal)' : '' }}</span>
+                            @if (isFoodPrescribed(item)) {
+                              <span class="prescribed-badge">Prescribed</span>
+                            }
+                          </div>
+                        }
+                        @if (getMealItems('breakfast', client.id).length === 0) {
+                          <p class="no-items-monitoring">No items assigned</p>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Lunch -->
+                    <div class="meal-monitoring-card">
+                      <div class="meal-monitoring-header">
+                        <span class="meal-monitoring-name">🍽️ Lunch</span>
+                        <span class="meal-monitoring-calories">{{ getMealCaloriesConsumed('lunch', client.id) }} cal</span>
+                      </div>
+                      <div class="meal-items-monitoring">
+                        @for (item of getMealItems('lunch', client.id); track $index) {
+                          <div class="meal-item-monitoring" [class.prescribed]="isFoodPrescribed(item)" [class.consumed]="isFoodConsumed(item)">
+                            <span class="food-status-icon">
+                              @if (isFoodConsumed(item)) {
+                                ✓
+                              } @else {
+                                ○
+                              }
+                            </span>
+                            <span class="food-name-monitoring">{{ item.name }}{{ item.quantity ? ' ' + item.quantity : '' }}{{ item.calories ? ' (' + item.calories + ' cal)' : '' }}</span>
+                            @if (isFoodPrescribed(item)) {
+                              <span class="prescribed-badge">Prescribed</span>
+                            }
+                          </div>
+                        }
+                        @if (getMealItems('lunch', client.id).length === 0) {
+                          <p class="no-items-monitoring">No items assigned</p>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Dinner -->
+                    <div class="meal-monitoring-card">
+                      <div class="meal-monitoring-header">
+                        <span class="meal-monitoring-name">🍲 Dinner</span>
+                        <span class="meal-monitoring-calories">{{ getMealCaloriesConsumed('dinner', client.id) }} cal</span>
+                      </div>
+                      <div class="meal-items-monitoring">
+                        @for (item of getMealItems('dinner', client.id); track $index) {
+                          <div class="meal-item-monitoring" [class.prescribed]="isFoodPrescribed(item)" [class.consumed]="isFoodConsumed(item)">
+                            <span class="food-status-icon">
+                              @if (isFoodConsumed(item)) {
+                                ✓
+                              } @else {
+                                ○
+                              }
+                            </span>
+                            <span class="food-name-monitoring">{{ item.name }}{{ item.quantity ? ' ' + item.quantity : '' }}{{ item.calories ? ' (' + item.calories + ' cal)' : '' }}</span>
+                            @if (isFoodPrescribed(item)) {
+                              <span class="prescribed-badge">Prescribed</span>
+                            }
+                          </div>
+                        }
+                        @if (getMealItems('dinner', client.id).length === 0) {
+                          <p class="no-items-monitoring">No items assigned</p>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Snacks -->
+                    <div class="meal-monitoring-card">
+                      <div class="meal-monitoring-header">
+                        <span class="meal-monitoring-name">🍎 Snacks</span>
+                        <span class="meal-monitoring-calories">{{ getMealCaloriesConsumed('snacks', client.id) }} cal</span>
+                      </div>
+                      <div class="meal-items-monitoring">
+                        @for (item of getMealItems('snacks', client.id); track $index) {
+                          <div class="meal-item-monitoring" [class.prescribed]="isFoodPrescribed(item)" [class.consumed]="isFoodConsumed(item)">
+                            <span class="food-status-icon">
+                              @if (isFoodConsumed(item)) {
+                                ✓
+                              } @else {
+                                ○
+                              }
+                            </span>
+                            <span class="food-name-monitoring">{{ item.name }}{{ item.quantity ? ' ' + item.quantity : '' }}{{ item.calories ? ' (' + item.calories + ' cal)' : '' }}</span>
+                            @if (isFoodPrescribed(item)) {
+                              <span class="prescribed-badge">Prescribed</span>
+                            }
+                          </div>
+                        }
+                        @if (getMealItems('snacks', client.id).length === 0) {
+                          <p class="no-items-monitoring">No items assigned</p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="client-actions">
+                  <button (click)="viewClientProgress(client.id)" class="btn-action primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    View Progress
+                  </button>
+                  <button (click)="assignDietPlan(client.id)" class="btn-action secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M6 9l6 6 6-6"></path>
+                    </svg>
+                    Diet Plan
+                  </button>
+                  <button (click)="assignWorkoutPlan(client.id)" class="btn-action secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    Workout Plan
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="no-selection">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <h3>Select a Client</h3>
+                <p>Click on a client name from the list to view their details</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+

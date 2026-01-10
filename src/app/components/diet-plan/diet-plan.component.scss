@@ -184,24 +184,105 @@
         padding: 8px 14px;
         border-radius: 20px;
         font-size: 14px;
+        position: relative;
+        margin: 4px 4px 4px 0;
 
         .remove-btn {
-          background: none;
-          border: none;
-          color: #1976d2;
+          position: absolute;
+          top: -6px;
+          right: -6px;
+          background: #ef4444;
+          border: 2px solid white;
+          color: white;
           cursor: pointer;
-          font-size: 18px;
+          font-size: 14px;
+          font-weight: bold;
           line-height: 1;
           padding: 0;
-          width: 18px;
-          height: 18px;
+          width: 20px;
+          height: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
+          border-radius: 50%;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          transition: all 0.2s;
 
           &:hover {
-            color: #d32f2f;
+            background: #dc2626;
+            transform: scale(1.1);
           }
+        }
+      }
+    }
+
+    .meal-calories {
+      margin-top: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #22c55e;
+      padding: 8px 12px;
+      background: #f1f8f4;
+      border-radius: 6px;
+      display: inline-block;
+    }
+  }
+
+  .meal-input-container {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+
+    .meal-input-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: center;
+
+      @media (max-width: 600px) {
+        grid-template-columns: 1fr;
+      }
+
+      .meal-food-input {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+
+        &:focus {
+          outline: none;
+          border-color: #667eea;
+        }
+      }
+
+      .meal-quantity-input,
+      .meal-calories-input {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+
+        &:focus {
+          outline: none;
+          border-color: #667eea;
+        }
+      }
+
+      .btn-meal-add {
+        padding: 10px 20px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+        white-space: nowrap;
+
+        &:hover {
+          background: #5568d3;
         }
       }
     }
@@ -239,6 +320,16 @@
       border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 14px;
+
+      &.quantity-input {
+        flex: 0.5;
+        max-width: 120px;
+      }
+
+      &.calories-input {
+        flex: 0.5;
+        max-width: 120px;
+      }
     }
 
     .btn-add {
@@ -255,6 +346,13 @@
         background: #5568d3;
       }
     }
+  }
+
+  .help-text {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
   }
 }
 
@@ -289,6 +387,155 @@
         background: #45a049;
       }
     }
+  }
+}
+
+.food-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+
+  .food-dialog {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid #e0e0e0;
+
+      h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: #999;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+
+        &:hover {
+          background: #f5f5f5;
+          color: #333;
+        }
+      }
+    }
+
+    .dialog-content {
+      padding: 24px;
+
+      .form-group {
+        margin-bottom: 20px;
+
+        label {
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 500;
+          color: #333;
+          font-size: 14px;
+        }
+
+        .dialog-input {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          font-size: 14px;
+          transition: border-color 0.3s;
+
+          &:focus {
+            outline: none;
+            border-color: #667eea;
+          }
+        }
+      }
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 24px;
+      border-top: 1px solid #e0e0e0;
+
+      .btn-cancel {
+        padding: 10px 20px;
+        background: #f5f5f5;
+        color: #666;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+
+        &:hover {
+          background: #e0e0e0;
+        }
+      }
+
+      .btn-confirm {
+        padding: 10px 20px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+
+        &:hover {
+          background: #5568d3;
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 

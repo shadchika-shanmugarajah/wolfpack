@@ -19,8 +19,11 @@
   <div class="main-content">
     <header class="dashboard-header">
       <h1>Dashboard</h1>
-      <div class="user-info">
-        <span>{{ authService.currentUser()?.email }}</span>
+      <div class="user-profile">
+        <span class="profile-name">{{ getUserName() }}</span>
+        <div class="profile-avatar">
+          {{ getInitials() }}
+        </div>
       </div>
     </header>
 
@@ -59,6 +62,34 @@
               {{ weightHistory().length > 0 ? weightHistory()[weightHistory().length - 1].weight : '--' }} kg
             </div>
             <div class="stat-label">Current Weight</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calorie Tracking -->
+      <div class="calorie-section">
+        <h2>Calorie Tracking</h2>
+        <div class="calorie-cards">
+          <div class="calorie-card consumed">
+            <div class="calorie-icon">🍽️</div>
+            <div class="calorie-info">
+              <div class="calorie-value">{{ getCaloriesConsumed() }}</div>
+              <div class="calorie-label">Calories Consumed</div>
+            </div>
+          </div>
+          <div class="calorie-card burned">
+            <div class="calorie-icon">🔥</div>
+            <div class="calorie-info">
+              <div class="calorie-value">{{ getCaloriesBurned() }}</div>
+              <div class="calorie-label">Calories Burned</div>
+            </div>
+          </div>
+          <div class="calorie-card net" [class.positive]="getNetCalories() >= 0" [class.negative]="getNetCalories() < 0">
+            <div class="calorie-icon">{{ getNetCalories() >= 0 ? '📈' : '📉' }}</div>
+            <div class="calorie-info">
+              <div class="calorie-value">{{ getNetCalories() }}</div>
+              <div class="calorie-label">Net Calories</div>
+            </div>
           </div>
         </div>
       </div>
@@ -125,60 +156,260 @@
         <div class="activity-card">
           <h3>Meal Tracking</h3>
           <div class="meals-grid">
-            <div class="meal-item">
-              <label class="checkbox-label large">
-                <input
-                  type="checkbox"
-                  [checked]="getMealCompleted('breakfast')"
-                  (change)="toggleMeal('breakfast')"
-                />
-                <div class="meal-content">
+            <!-- Breakfast -->
+            <div class="meal-card">
+              <div class="meal-card-header">
+                <label class="meal-checkbox">
+                  <input
+                    type="checkbox"
+                    [checked]="getMealCompleted('breakfast')"
+                    (change)="toggleMeal('breakfast')"
+                  />
                   <span class="meal-name">Breakfast</span>
-                  <span class="meal-items">{{ getMealItems('breakfast') }}</span>
-                </div>
-              </label>
+                </label>
+                <span class="meal-calories-badge">{{ getMealCaloriesConsumed('breakfast') }} cal</span>
+              </div>
+              <div class="meal-items-list">
+                @for (item of getMealItemsList('breakfast'); track $index) {
+                  <div class="meal-item-tag" [class.prescribed]="isFoodPrescribed('breakfast', $index)" [class.consumed]="isFoodConsumed('breakfast', $index)">
+                    <label class="food-checkbox">
+                      <input
+                        type="checkbox"
+                        [checked]="isFoodConsumed('breakfast', $index)"
+                        (change)="toggleFoodConsumed('breakfast', $index)"
+                      />
+                      <span class="food-name">{{ item.name }}{{ item.quantity ? ' ' + item.quantity : '' }}{{ item.calories ? ' (' + item.calories + ' cal)' : '' }}</span>
+                    </label>
+                    @if (!isFoodPrescribed('breakfast', $index)) {
+                      <button (click)="removeFoodItem('breakfast', $index)" class="remove-food-btn">×</button>
+                    }
+                  </div>
+                }
+                @if (getMealItemsList('breakfast').length === 0) {
+                  <p class="no-items">No items assigned</p>
+                }
+              </div>
+              <div class="meal-actions">
+                @if (!showCustomFoodInput()['breakfast']) {
+                  <button (click)="toggleCustomFoodInput('breakfast')" class="btn-add-food">+ Add Food</button>
+                } @else {
+                  <div class="custom-food-input">
+                    <input
+                      type="text"
+                      [(ngModel)]="customFoodInputs.breakfast.name"
+                      placeholder="Food name"
+                      class="food-name-input"
+                    />
+                    <input
+                      type="text"
+                      [(ngModel)]="customFoodInputs.breakfast.quantity"
+                      placeholder="Quantity"
+                      class="food-quantity-input"
+                    />
+                    <input
+                      type="number"
+                      [(ngModel)]="customFoodInputs.breakfast.calories"
+                      placeholder="Calories"
+                      class="food-calories-input"
+                      min="0"
+                    />
+                    <button (click)="addCustomFood('breakfast')" class="btn-save-food">Add</button>
+                    <button (click)="toggleCustomFoodInput('breakfast')" class="btn-cancel-food">Cancel</button>
+                  </div>
+                }
+              </div>
             </div>
 
-            <div class="meal-item">
-              <label class="checkbox-label large">
-                <input
-                  type="checkbox"
-                  [checked]="getMealCompleted('lunch')"
-                  (change)="toggleMeal('lunch')"
-                />
-                <div class="meal-content">
+            <!-- Lunch -->
+            <div class="meal-card">
+              <div class="meal-card-header">
+                <label class="meal-checkbox">
+                  <input
+                    type="checkbox"
+                    [checked]="getMealCompleted('lunch')"
+                    (change)="toggleMeal('lunch')"
+                  />
                   <span class="meal-name">Lunch</span>
-                  <span class="meal-items">{{ getMealItems('lunch') }}</span>
-                </div>
-              </label>
+                </label>
+                <span class="meal-calories-badge">{{ getMealCaloriesConsumed('lunch') }} cal</span>
+              </div>
+              <div class="meal-items-list">
+                @for (item of getMealItemsList('lunch'); track $index) {
+                  <div class="meal-item-tag" [class.prescribed]="isFoodPrescribed('lunch', $index)" [class.consumed]="isFoodConsumed('lunch', $index)">
+                    <label class="food-checkbox">
+                      <input
+                        type="checkbox"
+                        [checked]="isFoodConsumed('lunch', $index)"
+                        (change)="toggleFoodConsumed('lunch', $index)"
+                      />
+                      <span class="food-name">{{ item.name }}{{ item.quantity ? ' ' + item.quantity : '' }}{{ item.calories ? ' (' + item.calories + ' cal)' : '' }}</span>
+                    </label>
+                    @if (!isFoodPrescribed('lunch', $index)) {
+                      <button (click)="removeFoodItem('lunch', $index)" class="remove-food-btn">×</button>
+                    }
+                  </div>
+                }
+                @if (getMealItemsList('lunch').length === 0) {
+                  <p class="no-items">No items assigned</p>
+                }
+              </div>
+              <div class="meal-actions">
+                @if (!showCustomFoodInput()['lunch']) {
+                  <button (click)="toggleCustomFoodInput('lunch')" class="btn-add-food">+ Add Food</button>
+                } @else {
+                  <div class="custom-food-input">
+                    <input
+                      type="text"
+                      [(ngModel)]="customFoodInputs.lunch.name"
+                      placeholder="Food name"
+                      class="food-name-input"
+                    />
+                    <input
+                      type="text"
+                      [(ngModel)]="customFoodInputs.lunch.quantity"
+                      placeholder="Quantity"
+                      class="food-quantity-input"
+                    />
+                    <input
+                      type="number"
+                      [(ngModel)]="customFoodInputs.lunch.calories"
+                      placeholder="Calories"
+                      class="food-calories-input"
+                      min="0"
+                    />
+                    <button (click)="addCustomFood('lunch')" class="btn-save-food">Add</button>
+                    <button (click)="toggleCustomFoodInput('lunch')" class="btn-cancel-food">Cancel</button>
+                  </div>
+                }
+              </div>
             </div>
 
-            <div class="meal-item">
-              <label class="checkbox-label large">
-                <input
-                  type="checkbox"
-                  [checked]="getMealCompleted('dinner')"
-                  (change)="toggleMeal('dinner')"
-                />
-                <div class="meal-content">
+            <!-- Dinner -->
+            <div class="meal-card">
+              <div class="meal-card-header">
+                <label class="meal-checkbox">
+                  <input
+                    type="checkbox"
+                    [checked]="getMealCompleted('dinner')"
+                    (change)="toggleMeal('dinner')"
+                  />
                   <span class="meal-name">Dinner</span>
-                  <span class="meal-items">{{ getMealItems('dinner') }}</span>
-                </div>
-              </label>
+                </label>
+                <span class="meal-calories-badge">{{ getMealCaloriesConsumed('dinner') }} cal</span>
+              </div>
+              <div class="meal-items-list">
+                @for (item of getMealItemsList('dinner'); track $index) {
+                  <div class="meal-item-tag" [class.prescribed]="isFoodPrescribed('dinner', $index)" [class.consumed]="isFoodConsumed('dinner', $index)">
+                    <label class="food-checkbox">
+                      <input
+                        type="checkbox"
+                        [checked]="isFoodConsumed('dinner', $index)"
+                        (change)="toggleFoodConsumed('dinner', $index)"
+                      />
+                      <span class="food-name">{{ item.name }}{{ item.quantity ? ' ' + item.quantity : '' }}{{ item.calories ? ' (' + item.calories + ' cal)' : '' }}</span>
+                    </label>
+                    @if (!isFoodPrescribed('dinner', $index)) {
+                      <button (click)="removeFoodItem('dinner', $index)" class="remove-food-btn">×</button>
+                    }
+                  </div>
+                }
+                @if (getMealItemsList('dinner').length === 0) {
+                  <p class="no-items">No items assigned</p>
+                }
+              </div>
+              <div class="meal-actions">
+                @if (!showCustomFoodInput()['dinner']) {
+                  <button (click)="toggleCustomFoodInput('dinner')" class="btn-add-food">+ Add Food</button>
+                } @else {
+                  <div class="custom-food-input">
+                    <input
+                      type="text"
+                      [(ngModel)]="customFoodInputs.dinner.name"
+                      placeholder="Food name"
+                      class="food-name-input"
+                    />
+                    <input
+                      type="text"
+                      [(ngModel)]="customFoodInputs.dinner.quantity"
+                      placeholder="Quantity"
+                      class="food-quantity-input"
+                    />
+                    <input
+                      type="number"
+                      [(ngModel)]="customFoodInputs.dinner.calories"
+                      placeholder="Calories"
+                      class="food-calories-input"
+                      min="0"
+                    />
+                    <button (click)="addCustomFood('dinner')" class="btn-save-food">Add</button>
+                    <button (click)="toggleCustomFoodInput('dinner')" class="btn-cancel-food">Cancel</button>
+                  </div>
+                }
+              </div>
             </div>
 
-            <div class="meal-item">
-              <label class="checkbox-label large">
-                <input
-                  type="checkbox"
-                  [checked]="getMealCompleted('snacks')"
-                  (change)="toggleMeal('snacks')"
-                />
-                <div class="meal-content">
+            <!-- Snacks -->
+            <div class="meal-card">
+              <div class="meal-card-header">
+                <label class="meal-checkbox">
+                  <input
+                    type="checkbox"
+                    [checked]="getMealCompleted('snacks')"
+                    (change)="toggleMeal('snacks')"
+                  />
                   <span class="meal-name">Snacks</span>
-                  <span class="meal-items">{{ getMealItems('snacks') }}</span>
-                </div>
-              </label>
+                </label>
+                <span class="meal-calories-badge">{{ getMealCaloriesConsumed('snacks') }} cal</span>
+              </div>
+              <div class="meal-items-list">
+                @for (item of getMealItemsList('snacks'); track $index) {
+                  <div class="meal-item-tag" [class.prescribed]="isFoodPrescribed('snacks', $index)" [class.consumed]="isFoodConsumed('snacks', $index)">
+                    <label class="food-checkbox">
+                      <input
+                        type="checkbox"
+                        [checked]="isFoodConsumed('snacks', $index)"
+                        (change)="toggleFoodConsumed('snacks', $index)"
+                      />
+                      <span class="food-name">{{ item.name }}{{ item.quantity ? ' ' + item.quantity : '' }}{{ item.calories ? ' (' + item.calories + ' cal)' : '' }}</span>
+                    </label>
+                    @if (!isFoodPrescribed('snacks', $index)) {
+                      <button (click)="removeFoodItem('snacks', $index)" class="remove-food-btn">×</button>
+                    }
+                  </div>
+                }
+                @if (getMealItemsList('snacks').length === 0) {
+                  <p class="no-items">No items assigned</p>
+                }
+              </div>
+              <div class="meal-actions">
+                @if (!showCustomFoodInput()['snacks']) {
+                  <button (click)="toggleCustomFoodInput('snacks')" class="btn-add-food">+ Add Food</button>
+                } @else {
+                  <div class="custom-food-input">
+                    <input
+                      type="text"
+                      [(ngModel)]="customFoodInputs.snacks.name"
+                      placeholder="Food name"
+                      class="food-name-input"
+                    />
+                    <input
+                      type="text"
+                      [(ngModel)]="customFoodInputs.snacks.quantity"
+                      placeholder="Quantity"
+                      class="food-quantity-input"
+                    />
+                    <input
+                      type="number"
+                      [(ngModel)]="customFoodInputs.snacks.calories"
+                      placeholder="Calories"
+                      class="food-calories-input"
+                      min="0"
+                    />
+                    <button (click)="addCustomFood('snacks')" class="btn-save-food">Add</button>
+                    <button (click)="toggleCustomFoodInput('snacks')" class="btn-cancel-food">Cancel</button>
+                  </div>
+                }
+              </div>
             </div>
           </div>
         </div>
@@ -230,6 +461,273 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Monthly Measurements Section -->
+      <div class="measurements-section">
+        <div class="section-header">
+          <h2>Monthly Body Measurements</h2>
+          <button (click)="toggleMeasurementForm()" class="btn-add-measurement">
+            {{ showMeasurementForm() ? 'Cancel' : (currentMeasurement() ? 'Edit This Month' : 'Add This Month') }}
+          </button>
+        </div>
+
+        @if (showMeasurementForm()) {
+          <div class="measurement-form-card">
+            <h3>{{ isEditing() ? 'Edit' : 'Add' }} Monthly Measurements</h3>
+            <form (ngSubmit)="saveMeasurement()" class="measurement-form">
+              <!-- Starting Point Stats -->
+              <div class="form-section">
+                <h4>🌟 Starting Point Stats</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>📏 Height (cm)</label>
+                    <input type="number" [(ngModel)]="measurementForm.height" name="height" placeholder="Enter height" step="0.1" />
+                  </div>
+                  <div class="form-group">
+                    <label>⚖️ Weight (kg)</label>
+                    <input type="number" [(ngModel)]="measurementForm.weight" name="weight" placeholder="Enter weight" step="0.1" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Body Blueprint -->
+              <div class="form-section">
+                <h4>📐 Body Blueprint (cm)</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>🦾 Shoulder (cm)</label>
+                    <input type="number" [(ngModel)]="measurementForm.shoulder" name="shoulder" placeholder="Enter measurement" step="0.1" />
+                  </div>
+                  <div class="form-group">
+                    <label>❤️ Chest (cm)</label>
+                    <input type="number" [(ngModel)]="measurementForm.chest" name="chest" placeholder="Enter measurement" step="0.1" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>🪶 Waist (cm)</label>
+                    <input type="number" [(ngModel)]="measurementForm.waist" name="waist" placeholder="Enter measurement" step="0.1" />
+                  </div>
+                  <div class="form-group">
+                    <label>🍔 Belly (cm)</label>
+                    <input type="number" [(ngModel)]="measurementForm.belly" name="belly" placeholder="Enter measurement" step="0.1" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>💪 Arms</label>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="sub-label">Right Arm (cm)</label>
+                      <input type="number" [(ngModel)]="measurementForm.rightArm" name="rightArm" placeholder="Enter measurement" step="0.1" />
+                    </div>
+                    <div class="form-group">
+                      <label class="sub-label">Left Arm (cm)</label>
+                      <input type="number" [(ngModel)]="measurementForm.leftArm" name="leftArm" placeholder="Enter measurement" step="0.1" />
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>🦵 Legs</label>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="sub-label">Right Leg (cm)</label>
+                      <input type="number" [(ngModel)]="measurementForm.rightLeg" name="rightLeg" placeholder="Enter measurement" step="0.1" />
+                    </div>
+                    <div class="form-group">
+                      <label class="sub-label">Left Leg (cm)</label>
+                      <input type="number" [(ngModel)]="measurementForm.leftLeg" name="leftLeg" placeholder="Enter measurement" step="0.1" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Power Tests -->
+              <div class="form-section">
+                <h4>💪 Power Tests</h4>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>🤸 Push-up Count</label>
+                    <input type="number" [(ngModel)]="measurementForm.pushupCount" name="pushupCount" placeholder="Enter count" />
+                  </div>
+                  <div class="form-group">
+                    <label>🧗 Pull-up Count</label>
+                    <input type="number" [(ngModel)]="measurementForm.pullupCount" name="pullupCount" placeholder="Enter count" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-save-measurement">Save Measurements</button>
+              </div>
+            </form>
+          </div>
+        }
+
+        @if (currentMeasurement()) {
+          <div class="measurement-display-card">
+            <div class="measurement-header">
+              <h3>Current Month: {{ currentMeasurement()!.month }}</h3>
+            </div>
+
+            <!-- Starting Point Stats -->
+            <div class="measurement-section">
+              <h4>🌟 Starting Point Stats</h4>
+              <div class="measurement-grid">
+                <div class="measurement-item">
+                  <span class="measurement-label">📏 Height</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.height }} cm</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.height, previousMeasurement()!.height)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.height, previousMeasurement()!.height))">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.height, previousMeasurement()!.height)) }} cm
+                      </span>
+                    }
+                  }
+                </div>
+                <div class="measurement-item">
+                  <span class="measurement-label">⚖️ Weight</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.weight }} kg</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.weight, previousMeasurement()!.weight)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.weight, previousMeasurement()!.weight), false)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.weight, previousMeasurement()!.weight)) }} kg
+                      </span>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Body Blueprint -->
+            <div class="measurement-section">
+              <h4>📐 Body Blueprint (cm)</h4>
+              <div class="measurement-grid">
+                <div class="measurement-item">
+                  <span class="measurement-label">🦾 Shoulder</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.shoulder }} cm</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.shoulder, previousMeasurement()!.shoulder)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.shoulder, previousMeasurement()!.shoulder), true)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.shoulder, previousMeasurement()!.shoulder)) }} cm
+                      </span>
+                    }
+                  }
+                </div>
+                <div class="measurement-item">
+                  <span class="measurement-label">❤️ Chest</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.chest }} cm</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.chest, previousMeasurement()!.chest)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.chest, previousMeasurement()!.chest), true)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.chest, previousMeasurement()!.chest)) }} cm
+                      </span>
+                    }
+                  }
+                </div>
+                <div class="measurement-item">
+                  <span class="measurement-label">🪶 Waist</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.waist }} cm</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.waist, previousMeasurement()!.waist)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.waist, previousMeasurement()!.waist), false)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.waist, previousMeasurement()!.waist)) }} cm
+                      </span>
+                    }
+                  }
+                </div>
+                <div class="measurement-item">
+                  <span class="measurement-label">🍔 Belly</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.belly }} cm</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.belly, previousMeasurement()!.belly)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.belly, previousMeasurement()!.belly), false)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.belly, previousMeasurement()!.belly)) }} cm
+                      </span>
+                    }
+                  }
+                </div>
+                <div class="measurement-item">
+                  <span class="measurement-label">💪 Right Arm</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.rightArm }} cm</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.rightArm, previousMeasurement()!.rightArm)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.rightArm, previousMeasurement()!.rightArm), true)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.rightArm, previousMeasurement()!.rightArm)) }} cm
+                      </span>
+                    }
+                  }
+                </div>
+                <div class="measurement-item">
+                  <span class="measurement-label">💪 Left Arm</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.leftArm }} cm</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.leftArm, previousMeasurement()!.leftArm)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.leftArm, previousMeasurement()!.leftArm), true)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.leftArm, previousMeasurement()!.leftArm)) }} cm
+                      </span>
+                    }
+                  }
+                </div>
+                <div class="measurement-item">
+                  <span class="measurement-label">🦵 Right Leg</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.rightLeg }} cm</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.rightLeg, previousMeasurement()!.rightLeg)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.rightLeg, previousMeasurement()!.rightLeg), true)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.rightLeg, previousMeasurement()!.rightLeg)) }} cm
+                      </span>
+                    }
+                  }
+                </div>
+                <div class="measurement-item">
+                  <span class="measurement-label">🦵 Left Leg</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.leftLeg }} cm</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.leftLeg, previousMeasurement()!.leftLeg)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.leftLeg, previousMeasurement()!.leftLeg), true)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.leftLeg, previousMeasurement()!.leftLeg)) }} cm
+                      </span>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Power Tests -->
+            <div class="measurement-section">
+              <h4>💪 Power Tests</h4>
+              <div class="measurement-grid">
+                <div class="measurement-item">
+                  <span class="measurement-label">🤸 Push-up Count</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.pushupCount }}</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.pushupCount, previousMeasurement()!.pushupCount)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.pushupCount, previousMeasurement()!.pushupCount), true)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.pushupCount, previousMeasurement()!.pushupCount)) }}
+                      </span>
+                    }
+                  }
+                </div>
+                <div class="measurement-item">
+                  <span class="measurement-label">🧗 Pull-up Count</span>
+                  <span class="measurement-value">{{ currentMeasurement()!.pullupCount }}</span>
+                  @if (previousMeasurement()) {
+                    @if (getGrowth(currentMeasurement()!.pullupCount, previousMeasurement()!.pullupCount)) {
+                      <span class="growth-badge" [style.color]="getGrowthColor(getGrowth(currentMeasurement()!.pullupCount, previousMeasurement()!.pullupCount), true)">
+                        {{ formatGrowth(getGrowth(currentMeasurement()!.pullupCount, previousMeasurement()!.pullupCount)) }}
+                      </span>
+                    }
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="no-measurement-card">
+            <p>No measurements recorded for this month yet. Click "Add This Month" to start tracking your progress!</p>
+          </div>
+        }
       </div>
     </div>
   </div>
