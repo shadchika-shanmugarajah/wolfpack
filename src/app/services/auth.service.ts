@@ -13,6 +13,8 @@ export interface User {
   address?: string;
   sexuality?: string;
   phoneNumber?: string;
+  approvalStatus?: 'none' | 'pending' | 'approved' | 'rejected';
+  dietPlanAssigned?: boolean;
 }
 
 @Injectable({
@@ -31,6 +33,21 @@ export class AuthService {
   ];
 
   currentUser = signal<User | null>(null);
+
+  private persistUsers(): void {
+    localStorage.setItem('allUsers', JSON.stringify(this.users));
+  }
+
+  private syncCurrentUserWithUsers(): void {
+    const current = this.currentUser();
+    if (!current) return;
+
+    const latest = this.users.find(u => u.id === current.id);
+    if (!latest) return;
+
+    this.currentUser.set(latest);
+    localStorage.setItem('currentUser', JSON.stringify(latest));
+  }
 
   constructor(private router: Router) {
     // Always ensure admin user exists
@@ -59,10 +76,35 @@ export class AuthService {
       // No stored users, use default admin
       this.users = [defaultAdmin];
     }
+
+    // Normalize state for backward compatibility with old localStorage users.
+    this.users = this.users.map(user => {
+      if (user.role === 'admin') {
+        return {
+          ...user,
+          approvalStatus: 'approved'
+        };
+      }
+
+      let derivedStatus: 'none' | 'pending' | 'approved' | 'rejected' = 'none';
+      if (user.approved) {
+        derivedStatus = 'approved';
+      } else if (user.profileComplete) {
+        derivedStatus = 'pending';
+      }
+
+      return {
+        ...user,
+        approvalStatus: user.approvalStatus || derivedStatus,
+        dietPlanAssigned: user.dietPlanAssigned ?? false
+      };
+    });
+    this.persistUsers();
     
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       this.currentUser.set(JSON.parse(storedUser));
+      this.syncCurrentUserWithUsers();
     }
   }
 
@@ -99,7 +141,9 @@ export class AuthService {
       phoneNumber: userData.phoneNumber,
       role: 'client',
       approved: false,
-      profileComplete: false
+      profileComplete: false,
+      approvalStatus: 'none',
+      dietPlanAssigned: false
     };
     this.users.push(newUser);
     this.currentUser.set(newUser);
@@ -120,7 +164,8 @@ export class AuthService {
   updateUserProfile(userId: string, profileData: any): void {
     const userIndex = this.users.findIndex(u => u.id === userId);
     if (userIndex !== -1) {
-      this.users[userIndex] = { ...this.users[userIndex], ...profileData, profileComplete: true };
+      this.users[userIndex] = { ...this.users[userIndex], ...profileData };
+      this.persistUsers();
       if (this.currentUser()?.id === userId) {
         this.currentUser.set(this.users[userIndex]);
         localStorage.setItem('currentUser', JSON.stringify(this.users[userIndex]));
@@ -132,12 +177,12 @@ export class AuthService {
     const userIndex = this.users.findIndex(u => u.id === userId);
     if (userIndex !== -1) {
       this.users[userIndex].approved = true;
+      this.users[userIndex].approvalStatus = 'approved';
       if (this.currentUser()?.id === userId) {
         this.currentUser.set(this.users[userIndex]);
         localStorage.setItem('currentUser', JSON.stringify(this.users[userIndex]));
       }
-      // Update in localStorage
-      localStorage.setItem('allUsers', JSON.stringify(this.users));
+      this.persistUsers();
     }
   }
 
@@ -145,9 +190,49 @@ export class AuthService {
     const userIndex = this.users.findIndex(u => u.id === userId);
     if (userIndex !== -1) {
       this.users[userIndex].approved = false;
-      // Update in localStorage
-      localStorage.setItem('allUsers', JSON.stringify(this.users));
+      this.users[userIndex].approvalStatus = 'rejected';
+      this.persistUsers();
     }
+  }
+
+  submitApprovalRequest(userId: string): void {
+    const userIndex = this.users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      this.users[userIndex].profileComplete = true;
+      this.users[userIndex].approved = false;
+      this.users[userIndex].approvalStatus = 'pending';
+      this.persistUsers();
+      if (this.currentUser()?.id === userId) {
+        this.currentUser.set(this.users[userIndex]);
+        localStorage.setItem('currentUser', JSON.stringify(this.users[userIndex]));
+      }
+    }
+  }
+
+  markDietPlanAssigned(userId: string): void {
+    const userIndex = this.users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      this.users[userIndex].dietPlanAssigned = true;
+      this.persistUsers();
+      if (this.currentUser()?.id === userId) {
+        this.currentUser.set(this.users[userIndex]);
+        localStorage.setItem('currentUser', JSON.stringify(this.users[userIndex]));
+      }
+    }
+  }
+
+  refreshCurrentUser(): User | null {
+    const current = this.currentUser();
+    if (!current) return null;
+
+    const latest = this.users.find(u => u.id === current.id) || null;
+    if (latest) {
+      this.currentUser.set(latest);
+      localStorage.setItem('currentUser', JSON.stringify(latest));
+      return latest;
+    }
+
+    return current;
   }
 
   getAllUsers(): User[] {
@@ -155,7 +240,7 @@ export class AuthService {
   }
 
   getPendingClients(): User[] {
-    return this.users.filter(u => u.role === 'client' && !u.approved && u.profileComplete);
+    return this.users.filter(u => u.role === 'client' && u.approvalStatus === 'pending' && u.profileComplete);
   }
 
   getApprovedClients(): User[] {

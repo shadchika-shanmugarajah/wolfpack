@@ -9,10 +9,14 @@
 
     <h1>Profile Submitted</h1>
     <p class="message">Your profile has been submitted successfully!</p>
-    <p class="waiting-message">Waiting for trainer approval...</p>
+    <p class="waiting-message">{{ getStatusMessage() }}</p>
 
     <button class="status-badge pending">
-      Pending Approval
+      {{ getStatusLabel() }}
+    </button>
+
+    <button class="status-badge pending" (click)="refreshStatus()">
+      Refresh Status
     </button>
 
     <div class="divider"></div>

@@ -112,6 +112,9 @@ export class LoginComponent {
           this.router.navigate(['/admin/dashboard']);
         } else if (!user.profileComplete) {
           this.router.navigate(['/client/setup']);
+        } else if (user.approvalStatus === 'rejected') {
+          this.error.set('Your request was rejected. Please contact your trainer.');
+          this.router.navigate(['/client/waiting']);
         } else if (!user.approved) {
           this.router.navigate(['/client/waiting']);
         } else {

@@ -154,6 +154,7 @@ export class ClientSetupComponent {
 
     this.dataService.saveClientProfile(profile);
     this.authService.updateUserProfile(user.id, { profileComplete: true });
+    this.authService.submitApprovalRequest(user.id);
 
     this.router.navigate(['/client/waiting']);
   }

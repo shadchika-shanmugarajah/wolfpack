@@ -193,6 +193,7 @@ export class DietPlanComponent implements OnInit {
     };
 
     this.dataService.saveDietPlan(plan);
+    this.authService.markDietPlanAssigned(this.userId()!);
     
     // Update today's activity with meal items
     const today = new Date().toISOString().split('T')[0];
