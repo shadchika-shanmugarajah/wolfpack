@@ -1,35 +1,138 @@
 <div class="waiting-container">
+  <div class="bg-mesh">
+    <div class="mesh-1"></div>
+    <div class="mesh-2"></div>
+  </div>
+
   <div class="waiting-card">
-    <div class="status-icon">
-      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <path d="M12 6v6l4 2"></path>
-      </svg>
+    <!-- Dynamic Icon Header -->
+    <div class="status-header">
+      @if (isApproved()) {
+        <div class="status-icon success-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M20 6L9 17l-5-5"></path>
+          </svg>
+        </div>
+      } @else if (checkingStatus()) {
+        <div class="status-icon checking-icon">
+          <svg class="spinner" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="10"></circle>
+          </svg>
+        </div>
+      } @else {
+        <div class="status-icon pending-icon">
+          <svg class="clock-spin" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+        </div>
+      }
     </div>
 
     <h1>Profile Submitted</h1>
-    <p class="message">Your profile has been submitted successfully!</p>
+    <p class="success-message">Your profile has been submitted successfully!</p>
     <p class="waiting-message">{{ getStatusMessage() }}</p>
 
-    <button class="status-badge pending">
-      {{ getStatusLabel() }}
-    </button>
+    <!-- Action Buttons -->
+    <div class="action-buttons-container">
+      <button 
+        type="button" 
+        class="status-btn" 
+        [class.approved]="isApproved()"
+        disabled
+      >
+        {{ getStatusLabel() }}
+      </button>
 
-    <button class="status-badge pending" (click)="refreshStatus()">
-      Refresh Status
-    </button>
+      <button 
+        type="button" 
+        class="refresh-btn" 
+        [disabled]="isApproved() || checkingStatus()"
+        (click)="refreshStatus()"
+      >
+        @if (checkingStatus()) {
+          <span>Checking Status...</span>
+        } @else {
+          <span>Refresh Status</span>
+        }
+      </button>
+    </div>
 
-    <div class="divider"></div>
+    <div class="divider-spacing"></div>
 
-    <div class="preview-header">
-      <span class="preview-label">Dashboard Preview</span>
-      <span class="locked-badge">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        Locked
-      </span>
+    <!-- Dashboard Preview Section -->
+    <div class="preview-section">
+      <div class="preview-title-bar">
+        <h3>Dashboard Preview</h3>
+        <span class="lock-status-badge" [class.unlocked]="isApproved()">
+          @if (isApproved()) {
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+            </svg>
+            <span>Unlocked</span>
+          } @else {
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Locked</span>
+          }
+        </span>
+      </div>
+
+      <!-- Preview Mockup Card -->
+      <div 
+        class="preview-mock-card" 
+        [class.unlocked-card]="isApproved()"
+        (click)="enterDashboard()"
+      >
+        <!-- Blurred dashboard contents -->
+        <div class="mock-content" [class.blur-content]="!isApproved()">
+          <div class="mock-stats-row">
+            <div class="stat-item">
+              <span class="stat-num">75%</span>
+              <span class="stat-label">Daily Workouts</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-num">1,850</span>
+              <span class="stat-label">Calories Eaten</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-num">8,400</span>
+              <span class="stat-label">Steps Walked</span>
+            </div>
+          </div>
+          <div class="mock-plan-preview">
+            <div class="plan-line"><strong>Today's Workout:</strong> Push Day (Chest & Shoulders)</div>
+            <div class="plan-line"><strong>Next Meal:</strong> Grilled Chicken & Jasmine Rice</div>
+          </div>
+        </div>
+
+        <!-- Lock/Unlock Floating Overlay -->
+        <div class="preview-overlay" [class.overlay-unlocked]="isApproved()">
+          @if (isApproved()) {
+            <div class="overlay-info un-locked">
+              <div class="icon-circle animate-pulse">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              </div>
+              <span class="overlay-text">Unlock Dashboard! Click to enter</span>
+            </div>
+          } @else {
+            <div class="overlay-info is-locked">
+              <div class="icon-circle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <span class="overlay-text">Locked: Awaiting Trainer Approval</span>
+            </div>
+          }
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -8,6 +8,9 @@ export interface ClientProfile {
   allergies: string[];
   medicalConditions: string;
   foodPreferences: string;
+  pastInjuries?: string;
+  fitnessGoal?: string;
+  workoutLocation?: string;
 }
 
 export interface DailyActivity {
@@ -22,6 +25,7 @@ export interface DailyActivity {
     lunch: { items: FoodItem[]; completed: boolean };
     dinner: { items: FoodItem[]; completed: boolean };
     snacks: { items: FoodItem[]; completed: boolean };
+    shake?: { items: FoodItem[]; completed: boolean };
   };
   weight?: number;
   caloriesConsumed?: number;
@@ -42,17 +46,37 @@ export interface DietPlan {
   lunch: FoodItem[];
   dinner: FoodItem[];
   snacks: FoodItem[];
+  shake?: FoodItem[];
 }
 
 export interface WorkoutPlan {
   userId: string;
-  exercises: {
+  exercises?: {
     name: string;
     reps: number;
     sets: number;
     frequency: 'daily' | 'weekly';
   }[];
   stepsTarget: number;
+  days?: DayWorkout[];
+}
+
+export interface DayWorkout {
+  dayName: string;
+  workoutTitle: string;
+  category: string;
+  notes: string;
+  exercises: Exercise[];
+}
+
+export interface Exercise {
+  exerciseName: string;
+  sets: number;
+  reps: number;
+  time: string;
+  rest: string;
+  notes: string;
+  isCollapsed?: boolean;
 }
 
 export interface MonthlyMeasurement {
@@ -138,6 +162,12 @@ export class DataService {
         existing.meals.lunch.items = markAsPrescribed(existing.meals.lunch.items, dietPlan.lunch);
         existing.meals.dinner.items = markAsPrescribed(existing.meals.dinner.items, dietPlan.dinner);
         existing.meals.snacks.items = markAsPrescribed(existing.meals.snacks.items, dietPlan.snacks);
+        if (dietPlan.shake) {
+          existing.meals.shake = {
+            items: markAsPrescribed(existing.meals.shake?.items || [], dietPlan.shake),
+            completed: existing.meals.shake?.completed || false
+          };
+        }
       }
       return existing;
     }
@@ -162,7 +192,8 @@ export class DataService {
         breakfast: { items: markAsPrescribed(dietPlan?.breakfast || []), completed: false },
         lunch: { items: markAsPrescribed(dietPlan?.lunch || []), completed: false },
         dinner: { items: markAsPrescribed(dietPlan?.dinner || []), completed: false },
-        snacks: { items: markAsPrescribed(dietPlan?.snacks || []), completed: false }
+        snacks: { items: markAsPrescribed(dietPlan?.snacks || []), completed: false },
+        shake: { items: markAsPrescribed(dietPlan?.shake || []), completed: false }
       },
       caloriesConsumed: 0,
       caloriesBurned: 0
@@ -242,6 +273,21 @@ export class DataService {
 
   constructor() {
     this.loadFromStorage();
+
+    // Seed Varun's profile for testing
+    if (!this.clientProfiles.has('varun')) {
+      this.clientProfiles.set('varun', {
+        userId: 'varun',
+        weight: 58,
+        height: 170,
+        bmi: 20.1,
+        allergies: [],
+        medicalConditions: 'None',
+        foodPreferences: 'Non-Vegetarian',
+        workoutLocation: 'Gym'
+      });
+      localStorage.setItem('clientProfiles', JSON.stringify(Array.from(this.clientProfiles.entries())));
+    }
   }
 }
 

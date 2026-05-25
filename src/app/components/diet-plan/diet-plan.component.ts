@@ -5,6 +5,17 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { DataService, FoodItem } from '../../services/data.service';
 
+export interface DietTemplate {
+  id: string;
+  mealCategory: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'shake';
+  calories: number;
+  title: string;
+  foods: string;
+  notes: string;
+  tags: string;
+  isEditing?: boolean;
+}
+
 @Component({
   selector: 'app-diet-plan',
   standalone: true,
@@ -15,35 +26,39 @@ import { DataService, FoodItem } from '../../services/data.service';
 export class DietPlanComponent implements OnInit {
   userId = signal<string>('');
   clientEmail = signal<string>('');
+  allergies = signal<string[]>([]);
+
+  // Client Plan Signals
   breakfast = signal<FoodItem[]>([]);
   lunch = signal<FoodItem[]>([]);
   dinner = signal<FoodItem[]>([]);
   snacks = signal<FoodItem[]>([]);
+  shake = signal<FoodItem[]>([]);
+
+  // Custom Item Inputs (for adding/editing foods directly in client's current plan)
   newItemName = signal('');
   newItemQuantity = signal('');
   newItemCalories = signal<number | null>(null);
-  selectedMeal = signal<'breakfast' | 'lunch' | 'dinner' | 'snacks'>('breakfast');
-  allergies = signal<string[]>([]);
+  selectedMeal = signal<'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'shake'>('breakfast');
 
-  // Individual meal inputs
-  mealInputs: {
-    breakfast: { name: string; quantity: string; calories: number | null };
-    lunch: { name: string; quantity: string; calories: number | null };
-    dinner: { name: string; quantity: string; calories: number | null };
-    snacks: { name: string; quantity: string; calories: number | null };
-  } = {
-    breakfast: { name: '', quantity: '', calories: null },
-    lunch: { name: '', quantity: '', calories: null },
-    dinner: { name: '', quantity: '', calories: null },
-    snacks: { name: '', quantity: '', calories: null }
-  };
+  // Meal Bank State
+  activeMealBank = signal<'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'shake' | null>('breakfast');
+  activeCalorieValue = signal<number | null>(300);
+  customCalorieInput = signal<number | null>(null);
 
-  commonFoods = {
-    breakfast: ['Oatmeal', 'Eggs', 'Greek Yogurt', 'Whole Grain Toast', 'Fruits', 'Smoothie'],
-    lunch: ['Grilled Chicken', 'Salad', 'Brown Rice', 'Vegetables', 'Quinoa', 'Fish'],
-    dinner: ['Lean Protein', 'Steamed Vegetables', 'Sweet Potato', 'Salmon', 'Turkey', 'Beans'],
-    snacks: ['Nuts', 'Apple', 'Protein Bar', 'Greek Yogurt', 'Banana', 'Trail Mix']
-  };
+  // Calorie Edit State
+  editingCalorieIndex = signal<number | null>(null);
+  editingCalorieValue = signal<number | null>(null);
+
+  calorieCards = signal<Record<string, number[]>>({
+    breakfast: [300, 400, 500, 600, 700, 800, 900, 1000],
+    lunch: [300, 400, 500, 600, 700, 800, 900, 1000],
+    dinner: [300, 400, 500, 600, 700, 800, 900, 1000],
+    snacks: [300, 400, 500, 600, 700, 800, 900, 1000],
+    shake: [300, 400, 500, 600, 700, 800, 900, 1000]
+  });
+
+  templates = signal<DietTemplate[]>([]);
 
   constructor(
     private route: ActivatedRoute,
@@ -71,110 +86,320 @@ export class DietPlanComponent implements OnInit {
         this.lunch.set(existingPlan.lunch || []);
         this.dinner.set(existingPlan.dinner || []);
         this.snacks.set(existingPlan.snacks || []);
+        this.shake.set(existingPlan.shake || []);
+      }
+    }
+
+    // Load templates & custom calories from storage
+    this.loadCalorieCardsFromStorage();
+    this.loadTemplatesFromStorage();
+  }
+
+  // LocalStorage Persist Functions
+  saveCalorieCardsToStorage(): void {
+    localStorage.setItem('dietCalorieCards', JSON.stringify(this.calorieCards()));
+  }
+
+  loadCalorieCardsFromStorage(): void {
+    const data = localStorage.getItem('dietCalorieCards');
+    if (data) {
+      this.calorieCards.set(JSON.parse(data));
+    }
+  }
+
+  saveTemplatesToStorage(): void {
+    localStorage.setItem('dietPlanTemplates', JSON.stringify(this.templates()));
+  }
+
+  loadTemplatesFromStorage(): void {
+    const data = localStorage.getItem('dietPlanTemplates');
+    if (data) {
+      this.templates.set(JSON.parse(data));
+    } else {
+      // Seed some initial demo templates
+      const initial: DietTemplate[] = [
+        {
+          id: 't1',
+          mealCategory: 'breakfast',
+          calories: 300,
+          title: 'High Protein Oats',
+          foods: 'Oats (50g), Whey Protein (1 scoop), Almond Milk (200ml)',
+          notes: 'Great for muscle recovery. Stir whey after heating oats.',
+          tags: 'high-protein, oats, recovery'
+        },
+        {
+          id: 't2',
+          mealCategory: 'breakfast',
+          calories: 500,
+          title: 'Classic Eggs & Avocado Toast',
+          foods: 'Whole Eggs (3), Avocado (50g), Sourdough Bread (2 slices)',
+          notes: 'Healthy fats and high quality protein.',
+          tags: 'healthy-fats, eggs, toast'
+        },
+        {
+          id: 't3',
+          mealCategory: 'shake',
+          calories: 400,
+          title: 'Peanut Butter Banana Shake',
+          foods: 'Banana (1), Peanut Butter (2 tbsp), Whole Milk (250ml), Protein Powder (1 scoop)',
+          notes: 'High calorie mass gainer shake.',
+          tags: 'mass-gain, peanut-butter, smoothie'
+        }
+      ];
+      this.templates.set(initial);
+      this.saveTemplatesToStorage();
+    }
+  }
+
+  // Meal Bank Expand/Collapse
+  selectMealBank(category: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'shake'): void {
+    if (this.activeMealBank() === category) {
+      this.activeMealBank.set(null);
+      this.activeCalorieValue.set(null);
+    } else {
+      this.activeMealBank.set(category);
+      // Select the first calorie value if available
+      const calories = this.calorieCards()[category];
+      this.activeCalorieValue.set(calories && calories.length > 0 ? calories[0] : null);
+    }
+    this.editingCalorieIndex.set(null);
+  }
+
+  // Calorie Selection
+  selectCalorieCard(calories: number): void {
+    if (this.activeCalorieValue() === calories) {
+      this.activeCalorieValue.set(null);
+    } else {
+      this.activeCalorieValue.set(calories);
+    }
+    this.editingCalorieIndex.set(null);
+  }
+
+  // Calorie Group CRUD
+  addCalorieCard(): void {
+    const category = this.activeMealBank();
+    const val = this.customCalorieInput();
+    if (!category || !val || val <= 0) return;
+    
+    const list = [...this.calorieCards()[category]];
+    if (!list.includes(val)) {
+      list.push(val);
+      list.sort((a, b) => a - b);
+      this.calorieCards.set({
+        ...this.calorieCards(),
+        [category]: list
+      });
+      this.saveCalorieCardsToStorage();
+      this.activeCalorieValue.set(val);
+    }
+    this.customCalorieInput.set(null);
+  }
+
+  startEditCalorieCard(index: number, calories: number, event: Event): void {
+    event.stopPropagation();
+    this.editingCalorieIndex.set(index);
+    this.editingCalorieValue.set(calories);
+  }
+
+  saveEditCalorieCard(event: Event): void {
+    event.stopPropagation();
+    const category = this.activeMealBank();
+    const index = this.editingCalorieIndex();
+    const newVal = this.editingCalorieValue();
+    if (!category || index === null || !newVal || newVal <= 0) return;
+
+    const oldVal = this.calorieCards()[category][index];
+    const list = [...this.calorieCards()[category]];
+    list[index] = newVal;
+    list.sort((a, b) => a - b);
+    this.calorieCards.set({
+      ...this.calorieCards(),
+      [category]: list
+    });
+    this.saveCalorieCardsToStorage();
+
+    // Also update existing templates calorie value
+    const updatedTemplates = this.templates().map(t => {
+      if (t.mealCategory === category && t.calories === oldVal) {
+        return { ...t, calories: newVal };
+      }
+      return t;
+    });
+    this.templates.set(updatedTemplates);
+    this.saveTemplatesToStorage();
+
+    this.editingCalorieIndex.set(null);
+    this.editingCalorieValue.set(null);
+    if (this.activeCalorieValue() === oldVal) {
+      this.activeCalorieValue.set(newVal);
+    }
+  }
+
+  cancelEditCalorieCard(event: Event): void {
+    event.stopPropagation();
+    this.editingCalorieIndex.set(null);
+    this.editingCalorieValue.set(null);
+  }
+
+  removeCalorieCard(calories: number, event: Event): void {
+    event.stopPropagation();
+    const category = this.activeMealBank();
+    if (!category) return;
+
+    if (confirm(`Are you sure you want to remove the ${calories} kcal group and all its templates?`)) {
+      const list = this.calorieCards()[category].filter(c => c !== calories);
+      this.calorieCards.set({
+        ...this.calorieCards(),
+        [category]: list
+      });
+      this.saveCalorieCardsToStorage();
+
+      // Remove templates
+      const filtered = this.templates().filter(t => !(t.mealCategory === category && t.calories === calories));
+      this.templates.set(filtered);
+      this.saveTemplatesToStorage();
+
+      if (this.activeCalorieValue() === calories) {
+        this.activeCalorieValue.set(null);
       }
     }
   }
 
-  showFoodDialog = signal<{ show: boolean; mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | null; foodName: string }>({
-    show: false,
-    mealType: null,
-    foodName: ''
-  });
-
-  tempFoodInput = { quantity: '1', calories: null as number | null };
-
-  openFoodDialog(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks', foodName: string): void {
-    this.showFoodDialog.set({
-      show: true,
-      mealType: mealType,
-      foodName: foodName
-    });
-    this.tempFoodInput = { quantity: '1', calories: null };
+  // Template Management
+  getCalorieTemplates(category: string, calories: number): DietTemplate[] {
+    return this.templates().filter(t => t.mealCategory === category && t.calories === calories);
   }
 
-  closeFoodDialog(): void {
-    this.showFoodDialog.set({
-      show: false,
-      mealType: null,
-      foodName: ''
-    });
-  }
+  addTemplate(): void {
+    const category = this.activeMealBank();
+    const calories = this.activeCalorieValue();
+    if (!category || !calories) return;
 
-  confirmAddFood(): void {
-    const dialog = this.showFoodDialog();
-    if (!dialog.mealType || !dialog.foodName) return;
-
-    const input = this.tempFoodInput;
-    this.addFood(
-      dialog.mealType,
-      dialog.foodName,
-      input.quantity || '1',
-      input.calories || 0
-    );
-    this.closeFoodDialog();
-  }
-
-  addFood(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks', foodName: string, quantity: string = '1', calories: number = 0): void {
-    const current = this[mealType]();
-    const newFood: FoodItem = {
-      name: foodName,
-      quantity: quantity,
+    const newTemplate: DietTemplate = {
+      id: Date.now().toString(),
+      mealCategory: category,
       calories: calories,
-      consumed: false,
-      isPrescribed: true // All items from trainer are prescribed
+      title: '',
+      foods: '',
+      notes: '',
+      tags: '',
+      isEditing: true
     };
-    this[mealType].set([...current, newFood]);
+
+    this.templates.set([...this.templates(), newTemplate]);
+    this.saveTemplatesToStorage();
   }
 
+  saveTemplate(template: DietTemplate): void {
+    if (!template.title.trim()) {
+      alert('Please enter a meal title.');
+      return;
+    }
+    const updated = this.templates().map(t => {
+      if (t.id === template.id) {
+        return { ...template, isEditing: false };
+      }
+      return t;
+    });
+    this.templates.set(updated);
+    this.saveTemplatesToStorage();
+  }
+
+  editTemplate(templateId: string): void {
+    const updated = this.templates().map(t => {
+      if (t.id === templateId) {
+        return { ...t, isEditing: true };
+      }
+      return t;
+    });
+    this.templates.set(updated);
+  }
+
+  duplicateTemplate(template: DietTemplate): void {
+    const newTemplate: DietTemplate = {
+      ...template,
+      id: (Date.now() + Math.random()).toString(),
+      title: `${template.title} (Copy)`,
+      isEditing: false
+    };
+    this.templates.set([...this.templates(), newTemplate]);
+    this.saveTemplatesToStorage();
+  }
+
+  deleteTemplate(templateId: string): void {
+    if (confirm('Are you sure you want to delete this template?')) {
+      const filtered = this.templates().filter(t => t.id !== templateId);
+      this.templates.set(filtered);
+      this.saveTemplatesToStorage();
+    }
+  }
+
+  assignTemplateToClient(template: DietTemplate): void {
+    const foodNames = template.foods
+      .split(/[\n,]+/)
+      .map(f => f.trim())
+      .filter(f => f.length > 0);
+
+    if (foodNames.length === 0) {
+      alert('No food items found in this template. Please add foods first.');
+      return;
+    }
+
+    const caloriesPerItem = Math.round(template.calories / foodNames.length);
+    const foodItems: FoodItem[] = foodNames.map(name => ({
+      name: name,
+      quantity: '1 portion',
+      calories: caloriesPerItem,
+      consumed: false,
+      isPrescribed: true
+    }));
+
+    const category = template.mealCategory;
+    if (category === 'breakfast') this.breakfast.set(foodItems);
+    else if (category === 'lunch') this.lunch.set(foodItems);
+    else if (category === 'dinner') this.dinner.set(foodItems);
+    else if (category === 'snacks') this.snacks.set(foodItems);
+    else if (category === 'shake') this.shake.set(foodItems);
+  }
+
+  // Client Plan Actions (Individual edits)
   addCustomFood(): void {
     const name = this.newItemName().trim();
-    const quantity = this.newItemQuantity().trim() || '1';
+    const quantity = this.newItemQuantity().trim() || '1 portion';
     const calories = this.newItemCalories() || 0;
     
     if (name) {
       const mealType = this.selectedMeal();
-      this.addFood(mealType, name, quantity, calories);
+      const current = this[mealType]();
+      const newFood: FoodItem = {
+        name,
+        quantity,
+        calories,
+        consumed: false,
+        isPrescribed: true
+      };
+      this[mealType].set([...current, newFood]);
+      
       this.newItemName.set('');
       this.newItemQuantity.set('');
       this.newItemCalories.set(null);
     }
   }
 
-  addMealFood(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks'): void {
-    const input = this.mealInputs[mealType];
-    const name = input.name.trim();
-    const quantity = input.quantity.trim() || '1';
-    const calories = input.calories || 0;
-    
-    if (name) {
-      this.addFood(mealType, name, quantity, calories);
-      // Reset input
-      this.mealInputs[mealType] = { name: '', quantity: '', calories: null };
-    }
-  }
-
-  removeFood(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks', index: number): void {
+  removeFood(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'shake', index: number): void {
     const current = this[mealType]();
     this[mealType].set(current.filter((_, i) => i !== index));
   }
 
-  getFoodDisplay(food: FoodItem): string {
-    if (food.quantity && food.calories > 0) {
-      return `${food.name} ${food.quantity} (${food.calories} calories)`;
-    } else if (food.quantity) {
-      return `${food.name} ${food.quantity}`;
-    } else if (food.calories > 0) {
-      return `${food.name} (${food.calories} calories)`;
-    }
-    return food.name;
+  clearCategory(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'shake'): void {
+    this[mealType].set([]);
   }
 
-  getTotalCalories(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks'): number {
+  getTotalCalories(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'shake'): number {
     return this[mealType]().reduce((sum, food) => sum + (food.calories || 0), 0);
   }
 
-  hasAllergy(food: string | FoodItem): boolean {
-    const foodName = typeof food === 'string' ? food : food.name;
+  hasAllergy(foodName: string): boolean {
     return this.allergies().some((a: string) => 
       foodName.toLowerCase().includes(a.toLowerCase()) || 
       a.toLowerCase().includes(foodName.toLowerCase())
@@ -189,17 +414,15 @@ export class DietPlanComponent implements OnInit {
       breakfast: this.breakfast(),
       lunch: this.lunch(),
       dinner: this.dinner(),
-      snacks: this.snacks()
+      snacks: this.snacks(),
+      shake: this.shake()
     };
 
     this.dataService.saveDietPlan(plan);
     this.authService.markDietPlanAssigned(this.userId()!);
     
-    // Update today's activity with meal items
-    const today = new Date().toISOString().split('T')[0];
+    // Update activity
     const activity = this.dataService.getTodayActivity(this.userId()!);
-    
-    // Ensure all items are marked as prescribed
     const markAsPrescribed = (items: FoodItem[]) => {
       return items.map(item => ({
         ...item,
@@ -213,22 +436,31 @@ export class DietPlanComponent implements OnInit {
     activity.meals.dinner.items = markAsPrescribed(this.dinner());
     activity.meals.snacks.items = markAsPrescribed(this.snacks());
     
-    // Calculate total calories consumed (only from consumed items)
-    activity.caloriesConsumed = activity.meals.breakfast.items
-      .filter(item => item.consumed)
-      .reduce((sum, item) => sum + (item.calories || 0), 0) +
-      activity.meals.lunch.items
-      .filter(item => item.consumed)
-      .reduce((sum, item) => sum + (item.calories || 0), 0) +
-      activity.meals.dinner.items
-      .filter(item => item.consumed)
-      .reduce((sum, item) => sum + (item.calories || 0), 0) +
-      activity.meals.snacks.items
-      .filter(item => item.consumed)
-      .reduce((sum, item) => sum + (item.calories || 0), 0);
+    if (this.shake().length > 0) {
+      activity.meals.shake = {
+        items: markAsPrescribed(this.shake()),
+        completed: activity.meals.shake?.completed || false
+      };
+    } else {
+      delete activity.meals.shake;
+    }
+    
+    // Recalculate calories consumed
+    let totalConsumed = 0;
+    const addConsumed = (mealItems: FoodItem[] | undefined) => {
+      if (!mealItems) return;
+      totalConsumed += mealItems.filter(item => item.consumed).reduce((sum, item) => sum + (item.calories || 0), 0);
+    };
+    addConsumed(activity.meals.breakfast.items);
+    addConsumed(activity.meals.lunch.items);
+    addConsumed(activity.meals.dinner.items);
+    addConsumed(activity.meals.snacks.items);
+    if (activity.meals.shake) {
+      addConsumed(activity.meals.shake.items);
+    }
+    activity.caloriesConsumed = totalConsumed;
     
     this.dataService.saveDailyActivity(this.userId()!, activity);
-
     this.router.navigate(['/admin/workout-plan', this.userId()]);
   }
 
@@ -236,4 +468,3 @@ export class DietPlanComponent implements OnInit {
     this.router.navigate(['/admin/workout-plan', this.userId()]);
   }
 }
-

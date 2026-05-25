@@ -27,330 +27,433 @@
         </div>
       }
 
-      <div class="meal-section">
-        <h2>Breakfast</h2>
-        <div class="food-selection">
-          <div class="common-foods">
-            @for (food of commonFoods.breakfast; track food) {
-              <button
-                (click)="openFoodDialog('breakfast', food)"
-                [class.has-allergy]="hasAllergy(food)"
-                class="food-btn"
-              >
-                {{ food }}
-                @if (hasAllergy(food)) {
-                  <span class="allergy-icon">⚠️</span>
-                }
-              </button>
-            }
+      <div class="workspace-layout">
+        <!-- LEFT: Meal Bank Templates -->
+        <div class="meal-bank-section">
+          <h2>Meal Bank Templates</h2>
+          <p class="section-desc">Browse and manage pre-saved templates, or create new ones, to assign to the client.</p>
+
+          <!-- 5 Clickable Meal Bank Cards -->
+          <div class="meal-banks-grid">
+            <div 
+              class="meal-bank-card"
+              [class.active]="activeMealBank() === 'breakfast'"
+              (click)="selectMealBank('breakfast')"
+            >
+              <div class="card-icon">🍳</div>
+              <div class="card-details">
+                <h3>Breakfast Bank</h3>
+                <p>Morning calorie templates</p>
+              </div>
+              <span class="expand-arrow">{{ activeMealBank() === 'breakfast' ? '▼' : '▶' }}</span>
+            </div>
+
+            <div 
+              class="meal-bank-card"
+              [class.active]="activeMealBank() === 'lunch'"
+              (click)="selectMealBank('lunch')"
+            >
+              <div class="card-icon">🥗</div>
+              <div class="card-details">
+                <h3>Lunch Bank</h3>
+                <p>Mid-day meal templates</p>
+              </div>
+              <span class="expand-arrow">{{ activeMealBank() === 'lunch' ? '▼' : '▶' }}</span>
+            </div>
+
+            <div 
+              class="meal-bank-card"
+              [class.active]="activeMealBank() === 'dinner'"
+              (click)="selectMealBank('dinner')"
+            >
+              <div class="card-icon">🍗</div>
+              <div class="card-details">
+                <h3>Dinner Bank</h3>
+                <p>Evening healthy templates</p>
+              </div>
+              <span class="expand-arrow">{{ activeMealBank() === 'dinner' ? '▼' : '▶' }}</span>
+            </div>
+
+            <div 
+              class="meal-bank-card"
+              [class.active]="activeMealBank() === 'snacks'"
+              (click)="selectMealBank('snacks')"
+            >
+              <div class="card-icon">🍎</div>
+              <div class="card-details">
+                <h3>Snack Bank</h3>
+                <p>Energy boosters & small bites</p>
+              </div>
+              <span class="expand-arrow">{{ activeMealBank() === 'snacks' ? '▼' : '▶' }}</span>
+            </div>
+
+            <div 
+              class="meal-bank-card"
+              [class.active]="activeMealBank() === 'shake'"
+              (click)="selectMealBank('shake')"
+            >
+              <div class="card-icon">🥤</div>
+              <div class="card-details">
+                <h3>Shake Bank</h3>
+                <p>Protein shakes & smoothies</p>
+              </div>
+              <span class="expand-arrow">{{ activeMealBank() === 'shake' ? '▼' : '▶' }}</span>
+            </div>
           </div>
-          <div class="selected-foods">
-            <label>Selected Items:</label>
-            <div class="food-tags">
-              @for (food of breakfast(); track $index) {
-                <span class="food-tag">
-                  <button (click)="removeFood('breakfast', $index)" class="remove-btn">×</button>
-                  {{ getFoodDisplay(food) }}
-                </span>
+
+          <!-- Expandable Meal Bank Content -->
+          @if (activeMealBank()) {
+            <div class="expanded-bank-container">
+              <div class="bank-header">
+                <h3>{{ activeMealBank() | titlecase }} Calorie Groups</h3>
+                <div class="add-calorie-card">
+                  <input
+                    type="number"
+                    [(ngModel)]="customCalorieInput"
+                    placeholder="e.g. 450"
+                    class="kcal-input"
+                    min="1"
+                  />
+                  <button (click)="addCalorieCard()" class="btn-add-kcal">+ Add Calorie Card</button>
+                </div>
+              </div>
+
+              <!-- Calorie Cards Row -->
+              <div class="calorie-cards-row">
+                @for (calories of calorieCards()[activeMealBank()!]; track calories; let idx = $index) {
+                  <div
+                    class="calorie-card-btn"
+                    [class.active]="activeCalorieValue() === calories"
+                    (click)="selectCalorieCard(calories)"
+                  >
+                    @if (editingCalorieIndex() === idx) {
+                      <div class="edit-kcal-wrapper">
+                        <input
+                          type="number"
+                          [(ngModel)]="editingCalorieValue"
+                          (click)="$event.stopPropagation()"
+                          class="edit-kcal-input"
+                        />
+                        <button (click)="saveEditCalorieCard($event)" class="btn-save-kcal-edit">✓</button>
+                        <button (click)="cancelEditCalorieCard($event)" class="btn-cancel-kcal-edit">✗</button>
+                      </div>
+                    } @else {
+                      <span class="kcal-text">{{ calories }} kcal</span>
+                      <div class="kcal-actions">
+                        <button (click)="startEditCalorieCard(idx, calories, $event)" class="btn-kcal-edit" title="Edit kcal">✏️</button>
+                        <button (click)="removeCalorieCard(calories, $event)" class="btn-kcal-delete" title="Delete Card">×</button>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Calorie Group Templates (Open if a calorie card is active) -->
+              @if (activeCalorieValue()) {
+                <div class="templates-section">
+                  <div class="templates-header">
+                    <h4>Templates for {{ activeCalorieValue() }} kcal</h4>
+                    <button (click)="addTemplate()" class="btn-create-template">+ Add New Template</button>
+                  </div>
+
+                  <!-- Stacked Editable Cards -->
+                  <div class="templates-stack">
+                    @for (template of getCalorieTemplates(activeMealBank()!, activeCalorieValue()!); track template.id) {
+                      <div class="template-card" [class.editing]="template.isEditing">
+                        @if (template.isEditing) {
+                          <div class="template-form">
+                            <div class="form-group">
+                              <label>Meal Title</label>
+                              <input
+                                type="text"
+                                [(ngModel)]="template.title"
+                                placeholder="e.g. High Protein Vegetarian Breakfast"
+                                class="template-input"
+                              />
+                            </div>
+                            <div class="form-group">
+                              <label>Foods (Manually typed, one per line or comma-separated)</label>
+                              <textarea
+                                [(ngModel)]="template.foods"
+                                placeholder="e.g. oats, milk, banana, peanut butter"
+                                class="template-textarea"
+                                rows="3"
+                              ></textarea>
+                            </div>
+                            <div class="form-group">
+                              <label>Notes</label>
+                              <textarea
+                                [(ngModel)]="template.notes"
+                                placeholder="e.g. Pre-workout meal"
+                                class="template-textarea"
+                                rows="2"
+                              ></textarea>
+                            </div>
+                            <div class="form-group">
+                              <label>Tags (Comma-separated)</label>
+                              <input
+                                type="text"
+                                [(ngModel)]="template.tags"
+                                placeholder="e.g. vegetarian, high protein, budget"
+                                class="template-input"
+                              />
+                            </div>
+                            <div class="template-actions">
+                              <button (click)="saveTemplate(template)" class="btn-save-template">Save Template</button>
+                              <button (click)="template.isEditing = false" class="btn-cancel-template">Cancel</button>
+                            </div>
+                          </div>
+                        } @else {
+                          <div class="template-view">
+                            <div class="template-card-header">
+                              <h5>{{ template.title || 'Untitled Meal Template' }}</h5>
+                              <span class="kcal-badge">{{ template.calories }} kcal</span>
+                            </div>
+                            <div class="template-body">
+                              <div class="view-item">
+                                <strong>Foods:</strong>
+                                <p class="foods-list">{{ template.foods }}</p>
+                              </div>
+                              @if (template.notes) {
+                                <div class="view-item">
+                                  <strong>Notes:</strong>
+                                  <p>{{ template.notes }}</p>
+                                </div>
+                              }
+                              @if (template.tags) {
+                                <div class="view-item tags-row">
+                                  @for (tag of template.tags.split(','); track tag) {
+                                    @if (tag.trim()) {
+                                      <span class="tag-chip">{{ tag.trim() }}</span>
+                                    }
+                                  }
+                                </div>
+                              }
+                            </div>
+                            <div class="template-actions">
+                              <button (click)="assignTemplateToClient(template)" class="btn-assign">Assign to Client</button>
+                              <button (click)="editTemplate(template.id)" class="btn-edit">Edit</button>
+                              <button (click)="duplicateTemplate(template)" class="btn-duplicate">Duplicate</button>
+                              <button (click)="deleteTemplate(template.id)" class="btn-delete">Delete</button>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                    @if (getCalorieTemplates(activeMealBank()!, activeCalorieValue()!).length === 0) {
+                      <p class="no-templates-msg">No templates saved for this calorie group yet. Click "Add New Template" to create one manually.</p>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <p class="select-calorie-msg">Select a calorie card above to view or create meal templates.</p>
               }
             </div>
-            @if (breakfast().length > 0) {
-              <div class="meal-calories">Total: {{ getTotalCalories('breakfast') }} calories</div>
-            }
-          </div>
-          <div class="meal-input-container">
-            <div class="meal-input-row">
-              <input
-                type="text"
-                [(ngModel)]="mealInputs.breakfast.name"
-                name="breakfastName"
-                placeholder="Food name (e.g., Banana)"
-                class="meal-food-input"
-              />
-              <input
-                type="text"
-                [(ngModel)]="mealInputs.breakfast.quantity"
-                name="breakfastQuantity"
-                placeholder="Quantity (e.g., 2)"
-                class="meal-quantity-input"
-              />
-              <input
-                type="number"
-                [(ngModel)]="mealInputs.breakfast.calories"
-                name="breakfastCalories"
-                placeholder="Calories"
-                class="meal-calories-input"
-                min="0"
-              />
-              <button (click)="addMealFood('breakfast')" class="btn-meal-add">Add</button>
+          } @else {
+            <p class="select-calorie-msg">Select a meal bank card above to load calorie templates.</p>
+          }
+        </div>
+
+        <!-- RIGHT: Client's Assigned Diet Plan Summary -->
+        <div class="client-plan-summary">
+          <div class="summary-card">
+            <h2>Assigned Diet Plan</h2>
+            <p class="summary-desc">Live review of items assigned for the client's current plan.</p>
+
+            <div class="assigned-meals-stack">
+              <!-- Breakfast Assigned -->
+              <div class="assigned-meal-group">
+                <div class="group-header">
+                  <h4>Breakfast</h4>
+                  <div class="group-meta">
+                    <span class="group-calories">{{ getTotalCalories('breakfast') }} cal</span>
+                    @if (breakfast().length > 0) {
+                      <button (click)="clearCategory('breakfast')" class="btn-clear-cat">Clear</button>
+                    }
+                  </div>
+                </div>
+                <div class="assigned-foods-list">
+                  @for (food of breakfast(); track $index) {
+                    <div class="assigned-food-item" [class.allergy-warning-item]="hasAllergy(food.name)">
+                      <div class="food-info">
+                        <span class="food-name">{{ food.name }}</span>
+                        <span class="food-qty">{{ food.quantity }}</span>
+                        <span class="food-cal">{{ food.calories }} cal</span>
+                        @if (hasAllergy(food.name)) {
+                          <span class="allergy-badge" title="Client is allergic to this!">⚠️ Allergy</span>
+                        }
+                      </div>
+                      <button (click)="removeFood('breakfast', $index)" class="btn-remove-food" title="Remove Item">×</button>
+                    </div>
+                  }
+                  @if (breakfast().length === 0) {
+                    <p class="empty-meal-msg">No breakfast assigned</p>
+                  }
+                </div>
+              </div>
+
+              <!-- Lunch Assigned -->
+              <div class="assigned-meal-group">
+                <div class="group-header">
+                  <h4>Lunch</h4>
+                  <div class="group-meta">
+                    <span class="group-calories">{{ getTotalCalories('lunch') }} cal</span>
+                    @if (lunch().length > 0) {
+                      <button (click)="clearCategory('lunch')" class="btn-clear-cat">Clear</button>
+                    }
+                  </div>
+                </div>
+                <div class="assigned-foods-list">
+                  @for (food of lunch(); track $index) {
+                    <div class="assigned-food-item" [class.allergy-warning-item]="hasAllergy(food.name)">
+                      <div class="food-info">
+                        <span class="food-name">{{ food.name }}</span>
+                        <span class="food-qty">{{ food.quantity }}</span>
+                        <span class="food-cal">{{ food.calories }} cal</span>
+                        @if (hasAllergy(food.name)) {
+                          <span class="allergy-badge" title="Client is allergic to this!">⚠️ Allergy</span>
+                        }
+                      </div>
+                      <button (click)="removeFood('lunch', $index)" class="btn-remove-food" title="Remove Item">×</button>
+                    </div>
+                  }
+                  @if (lunch().length === 0) {
+                    <p class="empty-meal-msg">No lunch assigned</p>
+                  }
+                </div>
+              </div>
+
+              <!-- Dinner Assigned -->
+              <div class="assigned-meal-group">
+                <div class="group-header">
+                  <h4>Dinner</h4>
+                  <div class="group-meta">
+                    <span class="group-calories">{{ getTotalCalories('dinner') }} cal</span>
+                    @if (dinner().length > 0) {
+                      <button (click)="clearCategory('dinner')" class="btn-clear-cat">Clear</button>
+                    }
+                  </div>
+                </div>
+                <div class="assigned-foods-list">
+                  @for (food of dinner(); track $index) {
+                    <div class="assigned-food-item" [class.allergy-warning-item]="hasAllergy(food.name)">
+                      <div class="food-info">
+                        <span class="food-name">{{ food.name }}</span>
+                        <span class="food-qty">{{ food.quantity }}</span>
+                        <span class="food-cal">{{ food.calories }} cal</span>
+                        @if (hasAllergy(food.name)) {
+                          <span class="allergy-badge" title="Client is allergic to this!">⚠️ Allergy</span>
+                        }
+                      </div>
+                      <button (click)="removeFood('dinner', $index)" class="btn-remove-food" title="Remove Item">×</button>
+                    </div>
+                  }
+                  @if (dinner().length === 0) {
+                    <p class="empty-meal-msg">No dinner assigned</p>
+                  }
+                </div>
+              </div>
+
+              <!-- Snacks Assigned -->
+              <div class="assigned-meal-group">
+                <div class="group-header">
+                  <h4>Snacks</h4>
+                  <div class="group-meta">
+                    <span class="group-calories">{{ getTotalCalories('snacks') }} cal</span>
+                    @if (snacks().length > 0) {
+                      <button (click)="clearCategory('snacks')" class="btn-clear-cat">Clear</button>
+                    }
+                  </div>
+                </div>
+                <div class="assigned-foods-list">
+                  @for (food of snacks(); track $index) {
+                    <div class="assigned-food-item" [class.allergy-warning-item]="hasAllergy(food.name)">
+                      <div class="food-info">
+                        <span class="food-name">{{ food.name }}</span>
+                        <span class="food-qty">{{ food.quantity }}</span>
+                        <span class="food-cal">{{ food.calories }} cal</span>
+                        @if (hasAllergy(food.name)) {
+                          <span class="allergy-badge" title="Client is allergic to this!">⚠️ Allergy</span>
+                        }
+                      </div>
+                      <button (click)="removeFood('snacks', $index)" class="btn-remove-food" title="Remove Item">×</button>
+                    </div>
+                  }
+                  @if (snacks().length === 0) {
+                    <p class="empty-meal-msg">No snacks assigned</p>
+                  }
+                </div>
+              </div>
+
+              <!-- Shake Assigned -->
+              <div class="assigned-meal-group">
+                <div class="group-header">
+                  <h4>Shake</h4>
+                  <div class="group-meta">
+                    <span class="group-calories">{{ getTotalCalories('shake') }} cal</span>
+                    @if (shake().length > 0) {
+                      <button (click)="clearCategory('shake')" class="btn-clear-cat">Clear</button>
+                    }
+                  </div>
+                </div>
+                <div class="assigned-foods-list">
+                  @for (food of shake(); track $index) {
+                    <div class="assigned-food-item" [class.allergy-warning-item]="hasAllergy(food.name)">
+                      <div class="food-info">
+                        <span class="food-name">{{ food.name }}</span>
+                        <span class="food-qty">{{ food.quantity }}</span>
+                        <span class="food-cal">{{ food.calories }} cal</span>
+                        @if (hasAllergy(food.name)) {
+                          <span class="allergy-badge" title="Client is allergic to this!">⚠️ Allergy</span>
+                        }
+                      </div>
+                      <button (click)="removeFood('shake', $index)" class="btn-remove-food" title="Remove Item">×</button>
+                    </div>
+                  }
+                  @if (shake().length === 0) {
+                    <p class="empty-meal-msg">No shake assigned</p>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Add Custom Item Directly to Client Plan -->
+            <div class="custom-add-plan-section">
+              <h4>Add Item Directly to Plan</h4>
+              <div class="custom-add-grid">
+                <div class="form-group select-group">
+                  <label>Category</label>
+                  <select [(ngModel)]="selectedMeal" class="summary-select">
+                    <option value="breakfast">Breakfast</option>
+                    <option value="lunch">Lunch</option>
+                    <option value="dinner">Dinner</option>
+                    <option value="snacks">Snacks</option>
+                    <option value="shake">Shake</option>
+                  </select>
+                </div>
+                <div class="form-group name-group">
+                  <label>Food Name</label>
+                  <input type="text" [(ngModel)]="newItemName" placeholder="e.g. Banana" class="summary-input" />
+                </div>
+                <div class="form-group qty-group">
+                  <label>Qty</label>
+                  <input type="text" [(ngModel)]="newItemQuantity" placeholder="e.g. 1 portion" class="summary-input" />
+                </div>
+                <div class="form-group cal-group">
+                  <label>cal</label>
+                  <input type="number" [(ngModel)]="newItemCalories" placeholder="e.g. 100" class="summary-input" min="0" />
+                </div>
+                <button (click)="addCustomFood()" class="btn-add-to-plan">Add to Plan</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="meal-section">
-        <h2>Lunch</h2>
-        <div class="food-selection">
-          <div class="common-foods">
-            @for (food of commonFoods.lunch; track food) {
-              <button
-                (click)="openFoodDialog('lunch', food)"
-                [class.has-allergy]="hasAllergy(food)"
-                class="food-btn"
-              >
-                {{ food }}
-                @if (hasAllergy(food)) {
-                  <span class="allergy-icon">⚠️</span>
-                }
-              </button>
-            }
-          </div>
-          <div class="selected-foods">
-            <label>Selected Items:</label>
-            <div class="food-tags">
-              @for (food of lunch(); track $index) {
-                <span class="food-tag">
-                  <button (click)="removeFood('lunch', $index)" class="remove-btn">×</button>
-                  {{ getFoodDisplay(food) }}
-                </span>
-              }
-            </div>
-            @if (lunch().length > 0) {
-              <div class="meal-calories">Total: {{ getTotalCalories('lunch') }} calories</div>
-            }
-          </div>
-          <div class="meal-input-container">
-            <div class="meal-input-row">
-              <input
-                type="text"
-                [(ngModel)]="mealInputs.lunch.name"
-                name="lunchName"
-                placeholder="Food name (e.g., Banana)"
-                class="meal-food-input"
-              />
-              <input
-                type="text"
-                [(ngModel)]="mealInputs.lunch.quantity"
-                name="lunchQuantity"
-                placeholder="Quantity (e.g., 2)"
-                class="meal-quantity-input"
-              />
-              <input
-                type="number"
-                [(ngModel)]="mealInputs.lunch.calories"
-                name="lunchCalories"
-                placeholder="Calories"
-                class="meal-calories-input"
-                min="0"
-              />
-              <button (click)="addMealFood('lunch')" class="btn-meal-add">Add</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="meal-section">
-        <h2>Dinner</h2>
-        <div class="food-selection">
-          <div class="common-foods">
-            @for (food of commonFoods.dinner; track food) {
-              <button
-                (click)="openFoodDialog('dinner', food)"
-                [class.has-allergy]="hasAllergy(food)"
-                class="food-btn"
-              >
-                {{ food }}
-                @if (hasAllergy(food)) {
-                  <span class="allergy-icon">⚠️</span>
-                }
-              </button>
-            }
-          </div>
-          <div class="selected-foods">
-            <label>Selected Items:</label>
-            <div class="food-tags">
-              @for (food of dinner(); track $index) {
-                <span class="food-tag">
-                  <button (click)="removeFood('dinner', $index)" class="remove-btn">×</button>
-                  {{ getFoodDisplay(food) }}
-                </span>
-              }
-            </div>
-            @if (dinner().length > 0) {
-              <div class="meal-calories">Total: {{ getTotalCalories('dinner') }} calories</div>
-            }
-          </div>
-          <div class="meal-input-container">
-            <div class="meal-input-row">
-              <input
-                type="text"
-                [(ngModel)]="mealInputs.dinner.name"
-                name="dinnerName"
-                placeholder="Food name (e.g., Banana)"
-                class="meal-food-input"
-              />
-              <input
-                type="text"
-                [(ngModel)]="mealInputs.dinner.quantity"
-                name="dinnerQuantity"
-                placeholder="Quantity (e.g., 2)"
-                class="meal-quantity-input"
-              />
-              <input
-                type="number"
-                [(ngModel)]="mealInputs.dinner.calories"
-                name="dinnerCalories"
-                placeholder="Calories"
-                class="meal-calories-input"
-                min="0"
-              />
-              <button (click)="addMealFood('dinner')" class="btn-meal-add">Add</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="meal-section">
-        <h2>Snacks</h2>
-        <div class="food-selection">
-          <div class="common-foods">
-            @for (food of commonFoods.snacks; track food) {
-              <button
-                (click)="openFoodDialog('snacks', food)"
-                [class.has-allergy]="hasAllergy(food)"
-                class="food-btn"
-              >
-                {{ food }}
-                @if (hasAllergy(food)) {
-                  <span class="allergy-icon">⚠️</span>
-                }
-              </button>
-            }
-          </div>
-          <div class="selected-foods">
-            <label>Selected Items:</label>
-            <div class="food-tags">
-              @for (food of snacks(); track $index) {
-                <span class="food-tag">
-                  <button (click)="removeFood('snacks', $index)" class="remove-btn">×</button>
-                  {{ getFoodDisplay(food) }}
-                </span>
-              }
-            </div>
-            @if (snacks().length > 0) {
-              <div class="meal-calories">Total: {{ getTotalCalories('snacks') }} calories</div>
-            }
-          </div>
-          <div class="meal-input-container">
-            <div class="meal-input-row">
-              <input
-                type="text"
-                [(ngModel)]="mealInputs.snacks.name"
-                name="snacksName"
-                placeholder="Food name (e.g., Banana)"
-                class="meal-food-input"
-              />
-              <input
-                type="text"
-                [(ngModel)]="mealInputs.snacks.quantity"
-                name="snacksQuantity"
-                placeholder="Quantity (e.g., 2)"
-                class="meal-quantity-input"
-              />
-              <input
-                type="number"
-                [(ngModel)]="mealInputs.snacks.calories"
-                name="snacksCalories"
-                placeholder="Calories"
-                class="meal-calories-input"
-                min="0"
-              />
-              <button (click)="addMealFood('snacks')" class="btn-meal-add">Add</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="custom-food-section">
-        <h3>Add Custom Food Item</h3>
-        <div class="custom-input">
-          <select [(ngModel)]="selectedMeal" name="selectedMeal" class="meal-select">
-            <option value="breakfast">Breakfast</option>
-            <option value="lunch">Lunch</option>
-            <option value="dinner">Dinner</option>
-            <option value="snacks">Snacks</option>
-          </select>
-          <input
-            type="text"
-            [(ngModel)]="newItemName"
-            name="newItemName"
-            placeholder="Food name (e.g., Banana)"
-            class="food-input"
-          />
-          <input
-            type="text"
-            [(ngModel)]="newItemQuantity"
-            name="newItemQuantity"
-            placeholder="Quantity (e.g., 2)"
-            class="food-input quantity-input"
-          />
-          <input
-            type="number"
-            [(ngModel)]="newItemCalories"
-            name="newItemCalories"
-            placeholder="Calories"
-            class="food-input calories-input"
-            min="0"
-          />
-          <button (click)="addCustomFood()" class="btn-add">Add</button>
-        </div>
-        <p class="help-text">Example: Banana, 2, 200 → "Banana 2 (200 calories)"</p>
-      </div>
-
-      <div class="action-buttons">
+      <div class="action-buttons-container">
         <button (click)="skip()" class="btn-skip">Skip</button>
         <button (click)="savePlan()" class="btn-save">Save & Continue to Workout Plan</button>
       </div>
     </div>
   </div>
-
-  <!-- Food Dialog -->
-  @if (showFoodDialog().show) {
-    <div class="food-dialog-overlay" (click)="closeFoodDialog()">
-      <div class="food-dialog" (click)="$event.stopPropagation()">
-        <div class="dialog-header">
-          <h3>Add {{ showFoodDialog().foodName }}</h3>
-          <button (click)="closeFoodDialog()" class="close-btn">×</button>
-        </div>
-        <div class="dialog-content">
-          <div class="form-group">
-            <label>Quantity</label>
-            <input
-              type="text"
-              [(ngModel)]="tempFoodInput.quantity"
-              name="tempQuantity"
-              placeholder="e.g., 2"
-              class="dialog-input"
-            />
-          </div>
-          <div class="form-group">
-            <label>Calories</label>
-            <input
-              type="number"
-              [(ngModel)]="tempFoodInput.calories"
-              name="tempCalories"
-              placeholder="e.g., 200"
-              class="dialog-input"
-              min="0"
-            />
-          </div>
-        </div>
-        <div class="dialog-actions">
-          <button (click)="closeFoodDialog()" class="btn-cancel">Cancel</button>
-          <button (click)="confirmAddFood()" class="btn-confirm">Add</button>
-        </div>
-      </div>
-    </div>
-  }
 </div>
-

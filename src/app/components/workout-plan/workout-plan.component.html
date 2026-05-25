@@ -1,4 +1,5 @@
 <div class="workout-plan-container">
+  <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-header">
       <h2>Gym Tracker</h2>
@@ -14,6 +15,7 @@
     </nav>
   </div>
 
+  <!-- Main Workspace -->
   <div class="main-content">
     <header class="plan-header">
       <h1>Assign Workout Plan</h1>
@@ -21,9 +23,10 @@
     </header>
 
     <div class="plan-content">
-      <div class="plan-section">
-        <h2>Daily Steps Target</h2>
-        <div class="steps-input">
+      <!-- Steps Target Card -->
+      <div class="steps-target-card">
+        <h3>Daily Steps Target</h3>
+        <div class="steps-input-row">
           <input
             type="number"
             [(ngModel)]="stepsTarget"
@@ -31,116 +34,340 @@
             min="0"
             class="steps-field"
           />
-          <span>steps per day</span>
+          <span class="steps-label">steps per day</span>
         </div>
       </div>
 
-      <div class="plan-section">
-        <h2>Exercises</h2>
-        <div class="common-exercises">
-          @for (exercise of commonExercises; track exercise) {
-            <button
-              (click)="addExercise(exercise)"
-              class="exercise-btn"
-              [disabled]="isExerciseAdded(exercise)"
-            >
-              {{ exercise }}
-            </button>
-          }
+      <div class="workspace-layout">
+        <!-- LEFT COLUMN: 7 Days Cards Grid -->
+        <div class="weekly-grid-column">
+          <h2>Weekly Workout Calendar</h2>
+          <p class="section-desc">Click on any day card to edit its workout, assign a library template, or modify exercises.</p>
+
+          <div class="days-grid">
+            @for (day of days(); track day.dayName; let idx = $index) {
+              <div class="day-card" (click)="editDay(idx)" [class.has-workout]="day.exercises.length > 0">
+                <div class="day-card-header">
+                  <h3>{{ day.dayName }}</h3>
+                  @if (day.exercises.length > 0) {
+                    <span class="day-badge">{{ day.exercises.length }} Exercises</span>
+                  } @else {
+                    <span class="day-badge rest">Rest Day</span>
+                  }
+                </div>
+                <div class="day-card-body">
+                  @if (day.workoutTitle) {
+                    <h4 class="workout-title">{{ day.workoutTitle }}</h4>
+                    @if (day.category) {
+                      <span class="workout-category">{{ day.category }}</span>
+                    }
+                    @if (day.notes) {
+                      <p class="workout-notes-preview">{{ day.notes | slice:0:60 }}{{ day.notes.length > 60 ? '...' : '' }}</p>
+                    }
+                  } @else {
+                    <p class="workout-empty-msg">No workout assigned. Click to configure.</p>
+                  }
+                </div>
+                @if (day.exercises.length > 0) {
+                  <div class="day-card-footer">
+                    <button (click)="clearDayIndex(idx, $event)" class="btn-clear-day">Clear Day</button>
+                    <span class="edit-link">Edit Plan →</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
         </div>
 
-        <div class="exercises-list">
-          @if (exercises().length === 0) {
-            <p class="no-exercises">No exercises added yet. Select from above or add custom exercise.</p>
-          } @else {
-            @for (exercise of exercises(); track $index) {
-              <div class="exercise-item">
-                <div class="exercise-header">
-                  <input
-                    type="text"
-                    [value]="exercise.name"
-                    (input)="updateExercise($index, 'name', $any($event.target).value)"
-                    class="exercise-name"
-                  />
-                  <button (click)="removeExercise($index)" class="remove-btn">×</button>
-                </div>
-                <div class="exercise-details">
-                  <div class="detail-group">
-                    <label>Reps:</label>
-                    <input
-                      type="number"
-                      [value]="exercise.reps"
-                      (input)="updateExercise($index, 'reps', +$any($event.target).value)"
-                      min="1"
-                      class="detail-input"
-                    />
+        <!-- RIGHT COLUMN: Library & Template Manager -->
+        <div class="library-column">
+          <div class="library-card">
+            <h2>Workout Templates Library</h2>
+            <p class="library-desc">Create and manage folders, categories, and pre-saved templates for your exercises split.</p>
+
+            <!-- Folder Management -->
+            <div class="lib-section">
+              <h4>Folders</h4>
+              <div class="lib-add-row">
+                <input type="text" [(ngModel)]="newFolderName" placeholder="New Folder Name" class="lib-input" />
+                <button (click)="createFolder()" class="btn-lib-add">Add</button>
+              </div>
+              <div class="lib-items-list">
+                @for (folder of folders(); track folder.folderId) {
+                  <div class="lib-item">
+                    @if (editingFolderId() === folder.folderId) {
+                      <div class="inline-edit-row">
+                        <input type="text" [(ngModel)]="editingFolderName" class="lib-edit-input" />
+                        <button (click)="saveEditFolder($event)" class="btn-check">✓</button>
+                        <button (click)="editingFolderId.set(null)" class="btn-cross">✗</button>
+                      </div>
+                    } @else {
+                      <span class="lib-item-name">📁 {{ folder.folderName }}</span>
+                      <div class="lib-actions">
+                        <button (click)="startEditFolder(folder, $event)" class="btn-lib-edit">✏️</button>
+                        <button (click)="deleteFolder(folder.folderId, $event)" class="btn-lib-delete">×</button>
+                      </div>
+                    }
                   </div>
-                  <div class="detail-group">
-                    <label>Sets:</label>
-                    <input
-                      type="number"
-                      [value]="exercise.sets"
-                      (input)="updateExercise($index, 'sets', +$any($event.target).value)"
-                      min="1"
-                      class="detail-input"
-                    />
+                }
+                @if (folders().length === 0) {
+                  <p class="empty-lib-msg">No folders created yet</p>
+                }
+              </div>
+            </div>
+
+            <!-- Category Management -->
+            <div class="lib-section">
+              <h4>Categories</h4>
+              <div class="lib-add-row">
+                <input type="text" [(ngModel)]="newCategoryName" placeholder="New Category" class="lib-input" />
+                <button (click)="createCategory()" class="btn-lib-add">Add</button>
+              </div>
+              <div class="lib-items-list">
+                @for (cat of categories(); track cat.categoryId) {
+                  <div class="lib-item">
+                    @if (editingCategoryId() === cat.categoryId) {
+                      <div class="inline-edit-row">
+                        <input type="text" [(ngModel)]="editingCategoryName" class="lib-edit-input" />
+                        <button (click)="saveEditCategory($event)" class="btn-check">✓</button>
+                        <button (click)="editingCategoryId.set(null)" class="btn-cross">✗</button>
+                      </div>
+                    } @else {
+                      <span class="lib-item-name">🏷️ {{ cat.categoryName }}</span>
+                      <div class="lib-actions">
+                        <button (click)="startEditCategory(cat, $event)" class="btn-lib-edit">✏️</button>
+                        <button (click)="deleteCategory(cat.categoryId, $event)" class="btn-lib-delete">×</button>
+                      </div>
+                    }
                   </div>
-                  <div class="detail-group">
-                    <label>Frequency:</label>
-                    <select
-                      [value]="exercise.frequency"
-                      (change)="updateExercise($index, 'frequency', $any($event.target).value)"
-                      class="detail-select"
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                    </select>
+                }
+                @if (categories().length === 0) {
+                  <p class="empty-lib-msg">No categories created yet</p>
+                }
+              </div>
+            </div>
+
+            <!-- Templates List organized by Folder -->
+            <div class="lib-section">
+              <h4>Workout Templates</h4>
+              <div class="templates-tree">
+                <!-- Folders -->
+                @for (folder of folders(); track folder.folderId) {
+                  <div class="folder-group">
+                    <span class="folder-group-title">📁 {{ folder.folderName }}</span>
+                    <div class="folder-templates-list">
+                      @for (temp of getFolderTemplates(folder.folderId); track temp.templateId) {
+                        <div class="template-tree-item">
+                          <span class="template-title" title="Exercises: {{ temp.exercises.length }}">{{ temp.title }}</span>
+                          <div class="template-item-actions">
+                            <button (click)="duplicateTemplateInLibrary(temp, $event)" class="btn-tree-action" title="Duplicate">📋</button>
+                            <button (click)="deleteTemplate(temp.templateId, $event)" class="btn-tree-delete" title="Delete">×</button>
+                          </div>
+                        </div>
+                      }
+                      @if (getFolderTemplates(folder.folderId).length === 0) {
+                        <span class="empty-folder-txt">Empty Folder</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Unorganized templates -->
+                <div class="folder-group">
+                  <span class="folder-group-title">📂 Unorganized Templates</span>
+                  <div class="folder-templates-list">
+                    @for (temp of getUnorganizedTemplates(); track temp.templateId) {
+                      <div class="template-tree-item">
+                        <span class="template-title" title="Exercises: {{ temp.exercises.length }}">{{ temp.title }}</span>
+                        <div class="template-item-actions">
+                          <button (click)="duplicateTemplateInLibrary(temp, $event)" class="btn-tree-action" title="Duplicate">📋</button>
+                          <button (click)="deleteTemplate(temp.templateId, $event)" class="btn-tree-delete" title="Delete">×</button>
+                        </div>
+                      </div>
+                    }
+                    @if (getUnorganizedTemplates().length === 0) {
+                      <span class="empty-folder-txt">No unorganized templates</span>
+                    }
                   </div>
                 </div>
               </div>
-            }
-          }
-        </div>
-
-        <div class="custom-exercise">
-          <h3>Add Custom Exercise</h3>
-          <div class="custom-input">
-            <input
-              type="text"
-              [(ngModel)]="newExerciseName"
-              name="newExerciseName"
-              placeholder="Exercise name"
-              class="exercise-input"
-            />
-            <input
-              type="number"
-              [(ngModel)]="newExerciseReps"
-              name="newExerciseReps"
-              placeholder="Reps"
-              min="1"
-              class="exercise-input-small"
-            />
-            <input
-              type="number"
-              [(ngModel)]="newExerciseSets"
-              name="newExerciseSets"
-              placeholder="Sets"
-              min="1"
-              class="exercise-input-small"
-            />
-            <select [(ngModel)]="newExerciseFrequency" name="newExerciseFrequency" class="exercise-select">
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-            </select>
-            <button (click)="addCustomExercise()" class="btn-add">Add</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="action-buttons">
-        <button (click)="savePlan()" class="btn-save">Save Workout Plan</button>
+      <!-- Action buttons -->
+      <div class="action-buttons-container">
+        <button (click)="router.navigate(['/admin/dashboard'])" class="btn-cancel">Cancel</button>
+        <button (click)="savePlan()" class="btn-publish">Publish Weekly Plan</button>
       </div>
     </div>
   </div>
-</div>
 
+  <!-- Day Workout Editor Drawer / Modal Overlay -->
+  @if (activeDayIndex() !== null && activeDayWorkout()) {
+    <div class="editor-overlay" (click)="closeEditor()">
+      <div class="editor-drawer" (click)="$event.stopPropagation()">
+        <!-- Editor Header -->
+        <div class="drawer-header">
+          <div class="header-left">
+            <h2>Edit Workout: {{ activeDayWorkout()!.dayName }}</h2>
+            <p>Day {{ activeDayIndex()! + 1 }} of Weekly split</p>
+          </div>
+          <button (click)="closeEditor()" class="btn-close-drawer">×</button>
+        </div>
+
+        <div class="drawer-content">
+          <!-- Quick Load Template Dropdown -->
+          <div class="form-group select-template-group">
+            <label>⚡ Quick Load Template</label>
+            <select (change)="loadTemplateIntoActive($any($event.target).value)" class="drawer-select">
+              <option value="">-- Choose Template to Load --</option>
+              @for (temp of templates(); track temp.templateId) {
+                <option [value]="temp.templateId">{{ temp.title }}</option>
+              }
+            </select>
+            <p class="help-text">Loading a template will overwrite current day values and exercises.</p>
+          </div>
+
+          <!-- Workout Details -->
+          <div class="form-group">
+            <label>Workout Title</label>
+            <input
+              type="text"
+              [(ngModel)]="activeDayWorkout()!.workoutTitle"
+              placeholder="e.g. Chest & Triceps Blast"
+              class="drawer-input"
+            />
+          </div>
+
+          <!-- Category Selection -->
+          <div class="form-group">
+            <label>Workout Category</label>
+            @if (showCreateCategoryInput()) {
+              <div class="inline-add-cat-row">
+                <input
+                  type="text"
+                  [(ngModel)]="newCategoryInputVal"
+                  placeholder="New Category Name"
+                  class="drawer-input inline-input"
+                />
+                <button (click)="saveNewCategoryInline()" class="btn-inline-save">✓ Save</button>
+                <button (click)="showCreateCategoryInput.set(false)" class="btn-inline-cancel">Cancel</button>
+              </div>
+            } @else {
+              <select 
+                [value]="activeDayWorkout()!.category" 
+                (change)="handleCategorySelect($any($event.target).value)" 
+                class="drawer-select"
+              >
+                <option value="">-- No Category --</option>
+                @for (cat of categories(); track cat.categoryId) {
+                  <option [value]="cat.categoryName">{{ cat.categoryName }}</option>
+                }
+                <option value="__new__">+ Create New Category...</option>
+              </select>
+            }
+          </div>
+
+          <!-- Notes / Instructions -->
+          <div class="form-group">
+            <label>Instructions & Notes</label>
+            <textarea
+              [(ngModel)]="activeDayWorkout()!.notes"
+              placeholder="Instructions, dynamic warm-up details, or training split notes..."
+              class="drawer-textarea"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <!-- Exercises List Header -->
+          <div class="exercises-header">
+            <h3>Workout Exercises ({{ activeDayWorkout()!.exercises.length }})</h3>
+            <button (click)="addExerciseToActive()" class="btn-add-exercise-row">+ Add Exercise</button>
+          </div>
+
+          <!-- Stacked Exercises List -->
+          <div class="exercises-stack">
+            @for (ex of activeDayWorkout()!.exercises; track $index; let idx = $index) {
+              <div class="exercise-item-card" [class.collapsed]="ex.isCollapsed">
+                <div class="exercise-card-header" (click)="toggleCollapseExercise(idx)">
+                  <div class="header-main">
+                    <span class="sort-drag-handle">☰</span>
+                    <input
+                      type="text"
+                      [(ngModel)]="ex.exerciseName"
+                      placeholder="Exercise Name (e.g. Bench Press)"
+                      class="ex-name-input"
+                      (click)="$event.stopPropagation()"
+                    />
+                  </div>
+                  <div class="card-header-actions" (click)="$event.stopPropagation()">
+                    <button (click)="moveExercise(idx, 'up')" [disabled]="idx === 0" class="btn-sort-arrow" title="Move Up">▲</button>
+                    <button (click)="moveExercise(idx, 'down')" [disabled]="idx === activeDayWorkout()!.exercises.length - 1" class="btn-sort-arrow" title="Move Down">▼</button>
+                    <button (click)="duplicateExerciseInActive(idx)" class="btn-card-duplicate" title="Duplicate">📋</button>
+                    <button (click)="removeExerciseFromActive(idx)" class="btn-card-delete" title="Delete">×</button>
+                  </div>
+                </div>
+
+                @if (!ex.isCollapsed) {
+                  <div class="exercise-card-body">
+                    <div class="exercise-inputs-grid">
+                      <div class="form-subgroup">
+                        <label>Sets</label>
+                        <input type="number" [(ngModel)]="ex.sets" class="sub-input" min="1" />
+                      </div>
+                      <div class="form-subgroup">
+                        <label>Reps</label>
+                        <input type="number" [(ngModel)]="ex.reps" class="sub-input" min="1" />
+                      </div>
+                      <div class="form-subgroup">
+                        <label>Time</label>
+                        <input type="text" [(ngModel)]="ex.time" placeholder="e.g. N/A" class="sub-input" />
+                      </div>
+                      <div class="form-subgroup">
+                        <label>Rest</label>
+                        <input type="text" [(ngModel)]="ex.rest" placeholder="e.g. 60s" class="sub-input" />
+                      </div>
+                    </div>
+                    <div class="form-group notes-group">
+                      <label>Exercise Notes</label>
+                      <input type="text" [(ngModel)]="ex.notes" placeholder="e.g. Warm up sets first, focus on form" class="drawer-input" />
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+            @if (activeDayWorkout()!.exercises.length === 0) {
+              <div class="empty-exercises-state">
+                <p>No exercises in this workout yet. Click "+ Add Exercise" or choose a library template to begin.</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Drawer Footer Controls -->
+        <div class="drawer-footer">
+          <div class="footer-left">
+            <button (click)="clearActiveDay()" class="btn-footer-clear">Clear Workout</button>
+            
+            <div class="duplicate-day-wrapper">
+              <select [(ngModel)]="targetDuplicateDay" class="duplicate-select">
+                @for (d of days(); track d.dayName) {
+                  @if (d.dayName !== activeDayWorkout()!.dayName) {
+                    <option [value]="d.dayName">Copy to {{ d.dayName }}</option>
+                  }
+                }
+              </select>
+              <button (click)="duplicateActiveDayToTarget()" class="btn-footer-dup">Duplicate</button>
+            </div>
+          </div>
+          <div class="footer-right">
+            <button (click)="saveActiveAsTemplate()" class="btn-footer-save-temp">Save as Template</button>
+            <button (click)="saveDayWorkout()" class="btn-footer-save-workout">Save Day Workout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

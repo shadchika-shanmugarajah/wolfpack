@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +11,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   isSignup = signal(false);
   email = signal('');
   password = signal('');
@@ -22,34 +22,91 @@ export class LoginComponent {
   phoneNumber = signal('');
   error = signal('');
   rememberMe = signal(false);
-  selectedRole = signal<'client' | 'admin'>('client');
+  selectedRole = signal<'client' | 'admin' | null>(null);
+
+  emailTouched = signal(false);
+  passwordTouched = signal(false);
+  showPassword = signal(false);
+
+  isEmailValid = computed(() => {
+    const emailStr = this.email().trim();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(emailStr);
+  });
+
+  isFormValid = computed(() => {
+    if (this.isSignup()) {
+      return !!this.email().trim() && this.isEmailValid() && !!this.password() &&
+             !!this.fullName().trim() && (this.age() !== null && this.age()! >= 1 && this.age()! <= 120) &&
+             !!this.address().trim() && !!this.sexuality() && this.phoneNumber().length >= 10;
+    } else {
+      return this.selectedRole() !== null && !!this.email().trim() && this.isEmailValid() && !!this.password();
+    }
+  });
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
 
+  ngOnInit(): void {
+    const remember = localStorage.getItem('rememberMe') === 'true';
+    this.rememberMe.set(remember);
+    if (remember) {
+      const emailVal = localStorage.getItem('rememberedEmail') || '';
+      const roleVal = localStorage.getItem('rememberedRole') as 'client' | 'admin' | null;
+      if (emailVal) {
+        this.email.set(emailVal);
+        this.emailTouched.set(true);
+      }
+      if (roleVal) {
+        this.selectedRole.set(roleVal);
+      }
+    }
+  }
+
   toggleSignup(): void {
     this.isSignup.set(true);
     this.error.set('');
+    this.emailTouched.set(false);
+    this.passwordTouched.set(false);
   }
 
   toggleLogin(): void {
     this.isSignup.set(false);
     this.error.set('');
+    this.emailTouched.set(false);
+    this.passwordTouched.set(false);
   }
 
   selectRole(role: 'client' | 'admin'): void {
     this.selectedRole.set(role);
     this.error.set('');
-    // Clear form when switching roles
-    this.email.set('');
+    
+    // Check if we have a remembered email for this specific role
+    const remember = localStorage.getItem('rememberMe') === 'true';
+    const rememberedRole = localStorage.getItem('rememberedRole');
+    if (remember && rememberedRole === role) {
+      this.email.set(localStorage.getItem('rememberedEmail') || '');
+      this.emailTouched.set(true);
+    } else {
+      this.email.set('');
+      this.emailTouched.set(false);
+    }
+    
     this.password.set('');
+    this.passwordTouched.set(false);
   }
 
   fillCredentials(): void {
-    this.email.set('admin');
+    this.email.set('trainer@gym.com');
     this.password.set('admin123');
+    this.emailTouched.set(true);
+    this.passwordTouched.set(true);
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword.update(val => !val);
   }
 
   onSubmit(): void {
@@ -91,7 +148,7 @@ export class LoginComponent {
         this.error.set('Email already exists');
       }
     } else {
-      if (!email || !password) {
+      if (!email || !password || !this.selectedRole()) {
         this.error.set('Please fill in all fields');
         return;
       }
@@ -103,9 +160,20 @@ export class LoginComponent {
         
         // Check if user role matches selected role
         if (user?.role !== expectedRole) {
-          this.error.set(`Please login as ${expectedRole === 'admin' ? 'Gym Trainer' : 'Gym Member'}`);
+          this.error.set(`Please login as ${expectedRole === 'admin' ? 'Trainer' : 'Member'}`);
           this.authService.logout();
           return;
+        }
+
+        // Store or clear remember me credentials
+        if (this.rememberMe()) {
+          localStorage.setItem('rememberMe', 'true');
+          localStorage.setItem('rememberedEmail', email);
+          localStorage.setItem('rememberedRole', expectedRole);
+        } else {
+          localStorage.removeItem('rememberMe');
+          localStorage.removeItem('rememberedEmail');
+          localStorage.removeItem('rememberedRole');
         }
 
         if (user.role === 'admin') {

@@ -17,9 +17,23 @@ export class ClientSetupComponent {
   height = signal<number | null>(null);
   hasAllergies = signal(false);
   customAllergies = signal('');
-  medicalConditions = signal('');
-  foodPreferences = signal('');
+  
+  // Injuries
+  pastInjuries = signal<'yes' | 'no' | null>(null);
+  injuriesDescription = signal('');
+
+  // Medical Conditions
+  hasMedicalConditions = signal<'yes' | 'no' | null>(null);
+  medicalConditionsDescription = signal('');
+
+  // Food Preferences
   customFoodPreferences = signal('');
+
+  // Fitness Goal
+  fitnessGoal = signal<'Weight Loss' | 'Weight Gain' | 'Body Recomposition' | null>(null);
+
+  // Workout Location
+  workoutLocation = signal<'Gym' | 'Home' | null>('Gym');
 
   // Common allergies with checkboxes
   commonAllergies = [
@@ -33,7 +47,7 @@ export class ClientSetupComponent {
     { name: 'Fish', checked: signal(false) }
   ];
 
-  // Common food preferences with checkboxes
+  // Common food preferences with checkboxes (rendered as chips)
   commonFoodPreferences = [
     { name: 'Vegetarian', checked: signal(false) },
     { name: 'Non-Vegetarian', checked: signal(false) },
@@ -45,6 +59,7 @@ export class ClientSetupComponent {
     { name: 'Halal', checked: signal(false) }
   ];
 
+  // Live BMI Calculator
   bmi = computed(() => {
     const w = this.weight();
     const h = this.height();
@@ -59,13 +74,13 @@ export class ClientSetupComponent {
     if (!bmiValue) return null;
     
     if (bmiValue < 18.5) {
-      return { label: 'Underweight', color: '#4A90E2', range: 'Underweight (<18.5)' };
+      return { label: 'Underweight', color: '#3b82f6', range: 'Underweight (<18.5)' };
     } else if (bmiValue < 25) {
-      return { label: 'Normal', color: '#22c55e', range: 'Normal (18.5-25)' };
+      return { label: 'Normal Weight', color: '#22c55e', range: 'Normal (18.5-25)' };
     } else if (bmiValue < 30) {
-      return { label: 'Overweight', color: '#FF9800', range: 'Overweight (25-30)' };
+      return { label: 'Overweight', color: '#eab308', range: 'Overweight (25-30)' };
     } else {
-      return { label: 'Obese', color: '#F44336', range: 'Obese (>30)' };
+      return { label: 'Obese', color: '#ef4444', range: 'Obese (>30)' };
     }
   });
 
@@ -73,7 +88,6 @@ export class ClientSetupComponent {
     const bmiValue = this.bmi();
     if (!bmiValue) return { underweight: 0, normal: 0, overweight: 0, obese: 0 };
     
-    // Calculate progress for each category
     let underweight = 0, normal = 0, overweight = 0, obese = 0;
     
     if (bmiValue < 18.5) {
@@ -95,6 +109,26 @@ export class ClientSetupComponent {
     return { underweight, normal, overweight, obese };
   });
 
+  // Validation Computes
+  isProfileFormValid = computed(() => {
+    const w = this.weight();
+    const h = this.height();
+    const goal = this.fitnessGoal();
+    const loc = this.workoutLocation();
+    const injuries = this.pastInjuries();
+    const injuriesDesc = this.injuriesDescription();
+    const medical = this.hasMedicalConditions();
+
+    if (!w || w <= 0 || !h || h <= 0) return false;
+    if (!goal) return false;
+    if (!loc) return false;
+    if (injuries === null) return false;
+    if (injuries === 'yes' && !injuriesDesc.trim()) return false;
+    if (medical === null) return false;
+
+    return true;
+  });
+
   constructor(
     private authService: AuthService,
     private dataService: DataService,
@@ -103,11 +137,14 @@ export class ClientSetupComponent {
 
   toggleAllergy(allergy: any): void {
     allergy.checked.set(!allergy.checked());
-    this.hasAllergies.set(this.commonAllergies.some(a => a.checked()));
   }
 
   toggleFoodPreference(pref: any): void {
     pref.checked.set(!pref.checked());
+  }
+
+  selectGoal(goal: 'Weight Loss' | 'Weight Gain' | 'Body Recomposition'): void {
+    this.fitnessGoal.set(goal);
   }
 
   logout(): void {
@@ -116,17 +153,16 @@ export class ClientSetupComponent {
 
   onSubmit(): void {
     const user = this.authService.currentUser();
-    if (!user || !this.weight() || !this.height()) {
+    if (!user || !this.isProfileFormValid()) {
       return;
     }
 
     // Collect selected allergies
-    const selectedAllergies = this.commonAllergies
-      .filter(a => a.checked())
-      .map(a => a.name);
+    const selectedAllergies = this.hasAllergies()
+      ? this.commonAllergies.filter(a => a.checked()).map(a => a.name)
+      : [];
     
-    // Add custom allergies if provided
-    if (this.customAllergies().trim()) {
+    if (this.hasAllergies() && this.customAllergies().trim()) {
       const custom = this.customAllergies().split(',').map(a => a.trim()).filter(a => a.length > 0);
       selectedAllergies.push(...custom);
     }
@@ -136,7 +172,6 @@ export class ClientSetupComponent {
       .filter(p => p.checked())
       .map(p => p.name);
     
-    // Add custom food preferences if provided
     if (this.customFoodPreferences().trim()) {
       const custom = this.customFoodPreferences().split(',').map(p => p.trim()).filter(p => p.length > 0);
       selectedFoodPrefs.push(...custom);
@@ -148,8 +183,11 @@ export class ClientSetupComponent {
       height: this.height()!,
       bmi: this.bmi()!,
       allergies: selectedAllergies,
-      medicalConditions: this.medicalConditions(),
-      foodPreferences: selectedFoodPrefs.join(', ')
+      medicalConditions: this.hasMedicalConditions() === 'yes' ? this.medicalConditionsDescription().trim() : 'None',
+      foodPreferences: selectedFoodPrefs.join(', ') || 'None',
+      pastInjuries: this.pastInjuries() === 'yes' ? this.injuriesDescription().trim() : 'None',
+      fitnessGoal: this.fitnessGoal()!,
+      workoutLocation: this.workoutLocation()!
     };
 
     this.dataService.saveClientProfile(profile);

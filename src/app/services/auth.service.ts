@@ -24,7 +24,7 @@ export class AuthService {
   private users: User[] = [
     {
       id: '1',
-      email: 'admin',
+      email: 'trainer@gym.com',
       password: 'admin123',
       role: 'admin',
       approved: true,
@@ -53,7 +53,7 @@ export class AuthService {
     // Always ensure admin user exists
     const defaultAdmin: User = {
       id: '1',
-      email: 'admin',
+      email: 'trainer@gym.com',
       password: 'admin123',
       role: 'admin',
       approved: true,
@@ -63,18 +63,53 @@ export class AuthService {
     // Load users from localStorage if available
     const storedUsers = localStorage.getItem('allUsers');
     if (storedUsers) {
-      const loadedUsers = JSON.parse(storedUsers);
+      let loadedUsers = JSON.parse(storedUsers);
+      let migrated = false;
+
+      // Migrate old 'admin' username to 'trainer@gym.com'
+      loadedUsers = loadedUsers.map((u: User) => {
+        if (u.role === 'admin' && u.email === 'admin') {
+          migrated = true;
+          return { ...u, email: 'trainer@gym.com' };
+        }
+        return u;
+      });
+
       // Check if admin user exists in loaded users
-      const adminExists = loadedUsers.find((u: User) => u.email === 'admin' && u.role === 'admin');
+      const adminExists = loadedUsers.find((u: User) => u.email === 'trainer@gym.com' && u.role === 'admin');
       if (!adminExists) {
         // Add default admin if not found
         this.users = [defaultAdmin, ...loadedUsers];
+        migrated = true;
       } else {
         this.users = loadedUsers;
+      }
+
+      if (migrated) {
+        localStorage.setItem('allUsers', JSON.stringify(this.users));
       }
     } else {
       // No stored users, use default admin
       this.users = [defaultAdmin];
+    }
+
+    // Seed Varun for testing
+    const varunExists = this.users.find(u => u.id === 'varun');
+    if (!varunExists) {
+      this.users.push({
+        id: 'varun',
+        email: 'varun@gym.com',
+        password: 'client123',
+        role: 'client',
+        fullName: 'Varun',
+        age: 25,
+        address: '123 Main St, Springfield',
+        sexuality: 'Male',
+        phoneNumber: '+1 555-0199',
+        approved: false,
+        profileComplete: true,
+        approvalStatus: 'pending'
+      });
     }
 
     // Normalize state for backward compatibility with old localStorage users.
@@ -103,7 +138,12 @@ export class AuthService {
     
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
-      this.currentUser.set(JSON.parse(storedUser));
+      let parsedUser = JSON.parse(storedUser);
+      if (parsedUser.role === 'admin' && parsedUser.email === 'admin') {
+        parsedUser.email = 'trainer@gym.com';
+        localStorage.setItem('currentUser', JSON.stringify(parsedUser));
+      }
+      this.currentUser.set(parsedUser);
       this.syncCurrentUserWithUsers();
     }
   }

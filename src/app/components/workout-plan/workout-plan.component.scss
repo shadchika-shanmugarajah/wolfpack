@@ -1,35 +1,38 @@
 .workout-plan-container {
   display: flex;
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #000000;
+  color: #ffffff;
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
 }
 
 .sidebar {
   width: 250px;
-  background: #0a0a0a;
+  background: #08080a;
   color: white;
   padding: 30px 0;
   position: fixed;
   height: 100vh;
   overflow-y: auto;
-  border-right: 1px solid #1f1f1f;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 10;
 
   .sidebar-header {
     padding: 0 30px 30px;
-    border-bottom: 1px solid #1f1f1f;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 
     h2 {
       margin: 0 0 8px 0;
       font-size: 24px;
       font-weight: 700;
-      color: #22c55e;
+      color: #9b1c31;
       letter-spacing: -0.5px;
     }
 
     .admin-badge {
       display: inline-block;
-      background: #22c55e;
-      color: #000;
+      background: #9b1c31;
+      color: white;
       padding: 4px 12px;
       border-radius: 12px;
       font-size: 12px;
@@ -44,25 +47,21 @@
     .nav-item {
       display: block;
       padding: 15px 30px;
-      color: #aaa;
+      color: #8e8e93;
       text-decoration: none;
-      transition: all 0.3s;
+      transition: all 0.3s ease;
       cursor: pointer;
       font-size: 15px;
 
       &:hover {
-        background: #1a1a1a;
-        color: #22c55e;
+        background: #1a1a24;
+        color: #9b1c31;
       }
 
       &.active {
-        background: #22c55e;
-        color: #000;
+        background: #9b1c31;
+        color: white;
         font-weight: 600;
-      }
-
-      span {
-        font-size: 15px;
       }
     }
   }
@@ -72,245 +71,1020 @@
   margin-left: 250px;
   flex: 1;
   min-height: 100vh;
+  background: #000000;
 }
 
 .plan-header {
-  background: white;
-  padding: 30px 40px;
-  border-bottom: 1px solid #e0e0e0;
+  background: #0c0c0e;
+  padding: 40px 48px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   justify-content: space-between;
   align-items: center;
 
   h1 {
     margin: 0;
-    font-size: 28px;
-    font-weight: 600;
-    color: #1a1a1a;
+    font-size: 32px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.5px;
   }
 
   .client-info {
-    color: #666;
-    font-size: 14px;
+    color: #a3a3a3;
+    font-size: 15px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 16px;
+    border-radius: 99px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 }
 
 .plan-content {
-  padding: 40px;
+  padding: 48px;
 }
 
-.plan-section {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-  h2 {
-    font-size: 20px;
-    font-weight: 600;
-    color: #333;
-    margin: 0 0 20px 0;
-  }
+.steps-target-card {
+  background: #0c0c0e;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px 32px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 
   h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
-    margin: 24px 0 16px 0;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .steps-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .steps-field {
+      width: 140px;
+      padding: 10px 14px;
+      background: #08080a;
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      color: white;
+      font-size: 15px;
+      transition: all 0.2s ease;
+
+      &:focus {
+        border-color: #9b1c31;
+      }
+    }
+
+    .steps-label {
+      color: #a3a3a3;
+      font-size: 15px;
+      font-weight: 500;
+    }
   }
 }
 
-.steps-input {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* 2-Column Workspace Layout */
+.workspace-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 40px;
 
-  .steps-field {
-    width: 150px;
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
-  }
-
-  span {
-    color: #666;
-    font-size: 16px;
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr;
   }
 }
 
-.common-exercises {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 24px;
+/* LEFT COLUMN: Weekly Workout Calendar Grid */
+.weekly-grid-column {
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 6px 0;
+  }
 
-  .exercise-btn {
-    padding: 10px 16px;
-    background: #f5f5f5;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    cursor: pointer;
+  .section-desc {
     font-size: 14px;
-    transition: all 0.3s;
-
-    &:hover:not(:disabled) {
-      border-color: #667eea;
-      background: #f0f4ff;
-    }
-
-    &:disabled {
-      background: #e0e0e0;
-      color: #999;
-      cursor: not-allowed;
-    }
+    color: #a3a3a3;
+    margin: 0 0 28px 0;
   }
 }
 
-.exercises-list {
-  margin-bottom: 24px;
+.days-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-  .no-exercises {
-    text-align: center;
-    color: #999;
-    padding: 20px;
-    font-style: italic;
-  }
+.day-card {
+  background: #0c0c0e;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
-  .exercise-item {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
+  .day-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 12px;
 
-    .exercise-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
+    h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+    }
 
-      .exercise-name {
-        flex: 1;
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-size: 16px;
-        font-weight: 600;
+    .day-badge {
+      background: rgba(255, 255, 255, 0.03);
+      color: #8e8e93;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+
+      &.rest {
+        background: rgba(142, 142, 147, 0.08);
+        border-color: rgba(142, 142, 147, 0.15);
       }
+    }
+  }
 
-      .remove-btn {
-        background: #f44336;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 28px;
-        height: 28px;
-        cursor: pointer;
-        font-size: 20px;
-        line-height: 1;
-        margin-left: 12px;
+  .day-card-body {
+    .workout-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #ffffff;
+      margin: 0 0 6px 0;
+    }
 
-        &:hover {
-          background: #d32f2f;
-        }
+    .workout-category {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #9b1c31;
+      background: rgba(155, 28, 49, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .workout-notes-preview {
+      font-size: 13px;
+      color: #a3a3a3;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .workout-empty-msg {
+      font-size: 13px;
+      color: #8e8e93;
+      margin: 0;
+      font-style: italic;
+    }
+  }
+
+  .day-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+
+    .btn-clear-day {
+      background: transparent;
+      border: none;
+      color: #8e8e93;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0;
+
+      &:hover {
+        color: #ef4444;
+        text-decoration: underline;
       }
     }
 
-    .exercise-details {
-      display: flex;
-      gap: 16px;
+    .edit-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: #9b1c31;
+    }
+  }
 
-      .detail-group {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
+  &:hover {
+    border-color: rgba(155, 28, 49, 0.4);
+    background: rgba(255, 255, 255, 0.02);
+    transform: translateX(4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
 
-        label {
-          font-size: 12px;
-          color: #666;
-          font-weight: 600;
-        }
+  &.has-workout {
+    border-color: rgba(155, 28, 49, 0.25);
+    background: rgba(155, 28, 49, 0.03);
 
-        .detail-input,
-        .detail-select {
-          padding: 8px 12px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          font-size: 14px;
-        }
+    &:hover {
+      border-color: #9b1c31;
+      background: rgba(155, 28, 49, 0.06);
+    }
+  }
+}
+
+/* RIGHT COLUMN: Library & Template Manager */
+.library-column {
+  .library-card {
+    background: #0c0c0e;
+    border-radius: 20px;
+    padding: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0 0 6px 0;
+    }
+
+    .library-desc {
+      font-size: 13px;
+      color: #a3a3a3;
+      margin: 0 0 24px 0;
+    }
+  }
+}
+
+.lib-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  h4 {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #8e8e93;
+    margin: 0 0 12px 0;
+  }
+
+  .lib-add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    .lib-input {
+      flex: 1;
+      background: #08080a;
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      color: white;
+      padding: 8px 10px;
+      font-size: 13px;
+
+      &:focus {
+        border-color: #9b1c31;
+      }
+    }
+
+    .btn-lib-add {
+      background: #1a1a1f;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover {
+        background: #24242b;
       }
     }
   }
 }
 
-.custom-exercise {
-  border-top: 2px solid #f0f0f0;
-  padding-top: 24px;
+.lib-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 160px;
+  overflow-y: auto;
 
-  .custom-input {
+  .lib-item {
     display: flex;
-    gap: 12px;
-    align-items: flex-end;
+    justify-content: space-between;
+    align-items: center;
+    background: #08080a;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
 
-    .exercise-input {
+    .lib-item-name {
+      color: #ffffff;
+      font-weight: 500;
+    }
+
+    .lib-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0.5;
+
+      .btn-lib-edit,
+      .btn-lib-delete {
+        background: transparent;
+        border: none;
+        color: #8e8e93;
+        font-size: 12px;
+        cursor: pointer;
+        padding: 2px;
+
+        &:hover {
+          color: white;
+        }
+      }
+
+      .btn-lib-delete:hover {
+        color: #ef4444;
+      }
+    }
+
+    &:hover .lib-actions {
+      opacity: 1;
+    }
+  }
+
+  .inline-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+
+    .lib-edit-input {
       flex: 1;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
+      background: #0c0c0e;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: white;
+      padding: 4px;
+      font-size: 12px;
     }
 
-    .exercise-input-small {
-      width: 100px;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
+    .btn-check,
+    .btn-cross {
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 11px;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .exercise-select {
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
+    .btn-check {
+      background: #10b981;
+      color: white;
     }
 
-    .btn-add {
-      padding: 12px 24px;
-      background: #667eea;
+    .btn-cross {
+      background: #ef4444;
+      color: white;
+    }
+  }
+
+  .empty-lib-msg {
+    color: #8e8e93;
+    font-size: 12px;
+    font-style: italic;
+    margin: 0;
+  }
+}
+
+/* Templates organised tree */
+.templates-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.folder-group {
+  .folder-group-title {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #a3a3a3;
+    margin-bottom: 6px;
+  }
+
+  .folder-templates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-left: 12px;
+    border-left: 1.5px dashed rgba(255, 255, 255, 0.05);
+  }
+}
+
+.template-tree-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+
+  .template-title {
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  .template-item-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0.5;
+
+    .btn-tree-action,
+    .btn-tree-delete {
+      background: transparent;
+      border: none;
+      color: #8e8e93;
+      font-size: 11px;
+      cursor: pointer;
+      padding: 0 2px;
+
+      &:hover {
+        color: white;
+      }
+    }
+
+    .btn-tree-delete:hover {
+      color: #ef4444;
+    }
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+
+    .template-item-actions {
+      opacity: 1;
+    }
+  }
+
+  .empty-folder-txt {
+    font-size: 11px;
+    color: #8e8e93;
+    font-style: italic;
+    padding-left: 8px;
+  }
+}
+
+/* Action Buttons bottom row */
+.action-buttons-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+  button {
+    padding: 16px 28px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.btn-cancel {
+      background: #1a1a1f;
+      color: #8e8e93;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+
+      &:hover {
+        background: #24242b;
+        color: white;
+      }
+    }
+
+    &.btn-publish {
+      background: #9b1c31;
+      color: white;
+      box-shadow: 0 4px 14px rgba(155, 28, 49, 0.15);
+
+      &:hover {
+        background: #7c1224;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(155, 28, 49, 0.3);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+/* ----------------------------------------------------
+   Day Workout Editor Overlay & Drawer (Centered modal)
+   ---------------------------------------------------- */
+.editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.editor-drawer {
+  background: #0c0c0e;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 780px;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  @media (max-width: 640px) {
+    width: 95%;
+    height: 95vh;
+    border-radius: 12px;
+  }
+}
+
+.drawer-header {
+  padding: 24px 32px;
+  background: #08080a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  .header-left {
+    h2 {
+      margin: 0 0 4px 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    p {
+      margin: 0;
+      font-size: 13px;
+      color: #8e8e93;
+    }
+  }
+
+  .btn-close-drawer {
+    background: transparent;
+    border: none;
+    color: #8e8e93;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+
+    &:hover {
+      color: white;
+    }
+  }
+}
+
+.drawer-content {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #8e8e93;
+      letter-spacing: 0.5px;
+    }
+
+    .drawer-input,
+    .drawer-select,
+    .drawer-textarea {
+      background: #08080a;
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      color: white;
+      padding: 12px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+      transition: all 0.2s ease;
+
+      &:focus {
+        border-color: #9b1c31;
+      }
+    }
+
+    .drawer-textarea {
+      resize: vertical;
+      font-family: inherit;
+    }
+  }
+
+  .inline-add-cat-row {
+    display: flex;
+    gap: 8px;
+
+    .inline-input {
+      flex: 1;
+    }
+
+    .btn-inline-save {
+      background: #10b981;
       color: white;
       border: none;
       border-radius: 8px;
+      padding: 0 16px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.3s;
+    }
 
-      &:hover {
-        background: #5568d3;
+    .btn-inline-cancel {
+      background: #1a1a1f;
+      color: #8e8e93;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+}
+
+.select-template-group {
+  background: rgba(155, 28, 49, 0.05);
+  border: 1px solid rgba(155, 28, 49, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+
+  .help-text {
+    margin: 6px 0 0 0;
+    font-size: 12px;
+    color: #8e8e93;
+    font-style: italic;
+  }
+}
+
+.exercises-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 32px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.05);
+
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    color: #ffffff;
+  }
+
+  .btn-add-exercise-row {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1.5px dashed rgba(155, 28, 49, 0.5);
+    color: #9b1c31;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+
+    &:hover {
+      background: rgba(155, 28, 49, 0.05);
+      border-color: #9b1c31;
+    }
+  }
+}
+
+.exercises-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.exercise-item-card {
+  background: #08080a;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  .exercise-card-header {
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.01);
+    cursor: pointer;
+
+    .header-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+
+      .sort-drag-handle {
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.15);
+        cursor: grab;
+      }
+
+      .ex-name-input {
+        background: transparent;
+        border: none;
+        border-bottom: 1.5px solid transparent;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 4px;
+        width: 70%;
+        transition: all 0.2s ease;
+
+        &:focus {
+          border-color: #9b1c31;
+          outline: none;
+        }
       }
     }
   }
+
+  .card-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .btn-sort-arrow,
+    .btn-card-duplicate,
+    .btn-card-delete {
+      background: transparent;
+      border: none;
+      color: #8e8e93;
+      cursor: pointer;
+      font-size: 12px;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.08);
+        color: white;
+      }
+
+      &:disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-card-delete:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+  }
+
+  .exercise-card-body {
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(0, 0, 0, 0.15);
+    animation: fadeIn 0.2s ease-out;
+
+    .exercise-inputs-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+
+      @media (max-width: 480px) {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .form-subgroup {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #8e8e93;
+      }
+
+      .sub-input {
+        background: #0c0c0e;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        color: white;
+        padding: 8px 10px;
+        font-size: 13px;
+        width: 100%;
+        box-sizing: border-box;
+
+        &:focus {
+          border-color: #9b1c31;
+        }
+      }
+    }
+
+    .notes-group {
+      margin-bottom: 0;
+    }
+  }
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  &.collapsed {
+    opacity: 0.85;
+  }
 }
 
-.action-buttons {
-  display: flex;
-  justify-content: flex-end;
+.empty-exercises-state {
+  text-align: center;
+  padding: 30px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  color: #8e8e93;
+  font-size: 13px;
+  font-style: italic;
+}
 
-  .btn-save {
-    padding: 14px 28px;
-    background: #4CAF50;
-    color: white;
-    border: none;
+/* Drawer Footer Controls */
+.drawer-footer {
+  padding: 24px 32px;
+  background: #08080a;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  .btn-footer-clear {
+    padding: 10px 16px;
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.3s;
 
     &:hover {
-      background: #45a049;
+      background: rgba(239, 68, 68, 0.1);
     }
   }
 }
 
+.duplicate-day-wrapper {
+  display: flex;
+  gap: 6px;
+
+  .duplicate-select {
+    background: #0c0c0e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: white;
+    padding: 6px;
+    font-size: 12px;
+  }
+
+  .btn-footer-dup {
+    padding: 6px 12px;
+    background: #1a1a1f;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background: #24242b;
+    }
+  }
+}
+
+.footer-right {
+  display: flex;
+  gap: 12px;
+
+  .btn-footer-save-temp {
+    padding: 12px 20px;
+    background: #1a1a1f;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background: #24242b;
+    }
+  }
+
+  .btn-footer-save-workout {
+    padding: 12px 20px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+
+    &:hover {
+      background: #059669;
+    }
+  }
+}
+
+/* ----------------------------------------------------
+   Animations
+   ---------------------------------------------------- */
+@keyframes scaleUp {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -15,6 +15,7 @@ export class ClientApprovalComponent implements OnInit {
   pendingClients = signal<User[]>([]);
   selectedClient = signal<User | null>(null);
   clientProfile = signal<any>(null);
+  showRejectModal = signal(false);
 
   constructor(
     public authService: AuthService,
@@ -49,13 +50,22 @@ export class ClientApprovalComponent implements OnInit {
   rejectClient(): void {
     const client = this.selectedClient();
     if (!client) return;
+    this.showRejectModal.set(true);
+  }
 
-    if (confirm('Are you sure you want to reject this client?')) {
+  confirmReject(): void {
+    const client = this.selectedClient();
+    if (client) {
       this.authService.rejectClient(client.id);
       this.loadPendingClients();
       this.selectedClient.set(null);
       this.clientProfile.set(null);
     }
+    this.showRejectModal.set(false);
+  }
+
+  cancelReject(): void {
+    this.showRejectModal.set(false);
   }
 
   assignPlans(): void {
@@ -78,10 +88,25 @@ export class ClientApprovalComponent implements OnInit {
   }
 
   getBMIColor(bmi: number): string {
-    if (bmi < 18.5) return '#4A90E2';
-    if (bmi < 25) return '#4CAF50';
-    if (bmi < 30) return '#FF9800';
-    return '#F44336';
+    if (bmi < 18.5) return '#3b82f6'; // Premium Blue
+    if (bmi < 25) return '#22c55e'; // Vibrant Green for Normal BMI
+    if (bmi < 30) return '#f59e0b'; // Amber
+    return '#ef4444'; // Red
+  }
+
+  getDietType(foodPreferences: string): string {
+    if (!foodPreferences) return 'Non-Vegetarian';
+    const lower = foodPreferences.toLowerCase();
+    if (lower.includes('non-vegetarian') || lower.includes('non vegetarian') || lower.includes('non-veg')) {
+      return 'Non-Vegetarian';
+    }
+    if (lower.includes('vegetarian') || lower.includes('veg')) {
+      return 'Vegetarian';
+    }
+    if (lower.includes('vegan')) {
+      return 'Vegan';
+    }
+    return 'Non-Vegetarian';
   }
 }
 

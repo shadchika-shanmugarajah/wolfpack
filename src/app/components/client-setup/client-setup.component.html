@@ -1,4 +1,9 @@
 <div class="setup-container">
+  <div class="bg-mesh">
+    <div class="mesh-1"></div>
+    <div class="mesh-2"></div>
+  </div>
+
   <header class="setup-header">
     <div class="header-left">
       <div class="profile-icon">
@@ -8,26 +13,29 @@
         </svg>
       </div>
       <div class="header-text">
-        <h1>Welcome, member!</h1>
+        <h1>Welcome!</h1>
         <p>Let's set up your profile</p>
       </div>
     </div>
-    <a (click)="logout()" class="logout-link">
+    <button (click)="logout()" class="logout-btn">
       Logout
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M9 18l6-6-6-6"></path>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path>
       </svg>
-    </a>
+    </button>
   </header>
 
   <div class="setup-card">
-    <h2>Complete Your Profile</h2>
-    <p class="subtitle">Help us understand your fitness journey better by providing some basic information.</p>
+    <div class="card-header">
+      <h2>Complete Your Profile</h2>
+      <p class="subtitle">Help us understand your fitness journey better by providing some basic information.</p>
+    </div>
 
     <form (ngSubmit)="onSubmit()" class="setup-form">
-      <!-- Body Measurements Section -->
+      
+      <!-- SECTION 1: BODY MEASUREMENTS -->
       <div class="form-section">
-        <div class="section-header">
+        <div class="section-title-wrapper">
           <div class="section-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
@@ -38,174 +46,331 @@
         
         <div class="form-row">
           <div class="form-group">
-            <label for="weight">Weight (kg) *</label>
-            <input
-              type="number"
-              id="weight"
-              [(ngModel)]="weight"
-              name="weight"
-              placeholder="50"
-              min="1"
-              step="0.1"
-              required
-            />
+            <label for="weight">Weight (kg) <span class="required-star">*</span></label>
+            <div class="input-wrapper">
+              <input
+                type="number"
+                id="weight"
+                [(ngModel)]="weight"
+                name="weight"
+                placeholder="Enter your weight"
+                min="20"
+                max="300"
+                step="0.1"
+                required
+              />
+            </div>
           </div>
 
           <div class="form-group">
-            <label for="height">Height (cm) *</label>
-            <input
-              type="number"
-              id="height"
-              [(ngModel)]="height"
-              name="height"
-              placeholder="153"
-              min="1"
-              required
-            />
+            <label for="height">Height (cm) <span class="required-star">*</span></label>
+            <div class="input-wrapper">
+              <input
+                type="number"
+                id="height"
+                [(ngModel)]="height"
+                name="height"
+                placeholder="Enter your height"
+                min="50"
+                max="250"
+                required
+              />
+            </div>
           </div>
         </div>
 
+        <!-- Realtime BMI Gauge -->
         @if (bmi()) {
           <div class="bmi-display">
-            <div class="bmi-header">
-              <span class="bmi-label">Your BMI</span>
-            </div>
-            <div class="bmi-content">
-              <div class="bmi-value-wrapper">
-                <span class="bmi-value" [style.color]="bmiCategory()?.color">{{ bmi() }}</span>
-                <span class="bmi-category" [style.background]="bmiCategory()?.color">
-                  {{ bmiCategory()?.label }}
-                </span>
+            <div class="bmi-details">
+              <span class="bmi-label">Calculated BMI</span>
+              <div class="bmi-value-badge" [style.background-color]="bmiCategory()?.color">
+                <span class="bmi-num">{{ bmi() }}</span>
+                <span class="bmi-cat">{{ bmiCategory()?.label }}</span>
               </div>
-              <div class="bmi-progress-bar">
-                <div class="bmi-segments">
-                  <div class="bmi-segment">
-                    <div class="segment-fill" [style.width.%]="bmiProgress().underweight"></div>
-                    <span class="segment-label">Underweight (&lt;18.5)</span>
-                  </div>
-                  <div class="bmi-segment">
-                    <div class="segment-fill" [style.width.%]="bmiProgress().normal"></div>
-                    <span class="segment-label">Normal (18.5-25)</span>
-                  </div>
-                  <div class="bmi-segment">
-                    <div class="segment-fill" [style.width.%]="bmiProgress().overweight"></div>
-                    <span class="segment-label">Overweight (25-30)</span>
-                  </div>
-                  <div class="bmi-segment">
-                    <div class="segment-fill" [style.width.%]="bmiProgress().obese"></div>
-                    <span class="segment-label">Obese (&gt;30)</span>
-                  </div>
-                </div>
+            </div>
+            <div class="bmi-progress-container">
+              <div class="bmi-progress-track">
+                <div class="bmi-progress-fill" [style.width.%]="bmiProgress().underweight" style="background-color: #3b82f6;"></div>
+                <div class="bmi-progress-fill" [style.width.%]="bmiProgress().normal" style="background-color: #22c55e;"></div>
+                <div class="bmi-progress-fill" [style.width.%]="bmiProgress().overweight" style="background-color: #eab308;"></div>
+                <div class="bmi-progress-fill" [style.width.%]="bmiProgress().obese" style="background-color: #ef4444;"></div>
+              </div>
+              <div class="bmi-scale-labels">
+                <span>&lt;18.5</span>
+                <span>18.5 - 25</span>
+                <span>25 - 30</span>
+                <span>30+</span>
               </div>
             </div>
           </div>
         }
       </div>
 
-      <!-- Health Information Section -->
+      <!-- SECTION 2: HEALTH INFORMATION -->
       <div class="form-section">
-        <div class="section-header">
+        <div class="section-title-wrapper">
           <div class="section-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
           </div>
           <h3>Health Information</h3>
         </div>
+        <p class="section-desc">This information helps us provide safer and more personalized fitness recommendations.</p>
 
-        <div class="form-group">
-          <label class="checkbox-label">
+        <!-- Food Allergies -->
+        <div class="form-group allergy-main-group">
+          <label class="checkbox-container">
             <input
               type="checkbox"
               [checked]="hasAllergies()"
               (change)="hasAllergies.set(!hasAllergies())"
+              name="hasAllergies"
             />
-            <span>I have food allergies</span>
+            <span class="checkmark"></span>
+            <span class="label-text">I have food allergies</span>
           </label>
         </div>
 
         @if (hasAllergies()) {
-          <div class="allergy-section">
+          <div class="allergy-sub-section">
+            <label class="sub-label">Select your allergies</label>
             <div class="checkbox-grid">
               @for (allergy of commonAllergies; track allergy.name) {
-                <label class="checkbox-item">
+                <label class="checkbox-container inline-checkbox">
                   <input
                     type="checkbox"
                     [checked]="allergy.checked()"
                     (change)="toggleAllergy(allergy)"
+                    name="allergy-{{allergy.name}}"
                   />
-                  <span>{{ allergy.name }}</span>
+                  <span class="checkmark"></span>
+                  <span class="label-text">{{ allergy.name }}</span>
                 </label>
               }
             </div>
-            <div class="form-group">
-              <label for="customAllergies">Other allergies (comma separated)</label>
+            <div class="form-group custom-input-group">
+              <label for="customAllergies">Other Allergies</label>
               <input
                 type="text"
                 id="customAllergies"
                 [(ngModel)]="customAllergies"
                 name="customAllergies"
-                placeholder="e.g., Peanuts, Dairy, Gluten (comma separated)"
-                class="custom-input"
+                placeholder="e.g. peanuts, dairy, gluten (separated by commas)"
               />
             </div>
           </div>
         }
 
-        <div class="form-group">
-          <label for="medical">Medical Conditions (Optional)</label>
-          <textarea
-            id="medical"
-            [(ngModel)]="medicalConditions"
-            name="medicalConditions"
-            placeholder="Any medical conditions we should be aware of?"
-            rows="4"
-          ></textarea>
+        <!-- Past Injuries -->
+        <div class="form-group radio-section-group">
+          <label class="radio-question-label">Have you had any past injuries? <span class="required-star">*</span></label>
+          <div class="radio-options-row">
+            <label class="radio-card" [class.active]="pastInjuries() === 'yes'">
+              <input type="radio" name="pastInjuries" value="yes" [ngModel]="pastInjuries()" (ngModelChange)="pastInjuries.set($event)" />
+              <div class="radio-dot"></div>
+              <span>Yes</span>
+            </label>
+            <label class="radio-card" [class.active]="pastInjuries() === 'no'">
+              <input type="radio" name="pastInjuries" value="no" [ngModel]="pastInjuries()" (ngModelChange)="pastInjuries.set($event)" />
+              <div class="radio-dot"></div>
+              <span>No</span>
+            </label>
+          </div>
         </div>
+
+        @if (pastInjuries() === 'yes') {
+          <div class="conditional-textarea-wrapper">
+            <div class="form-group">
+              <label for="injuriesDesc">Describe your injuries <span class="required-star">*</span></label>
+              <textarea
+                id="injuriesDesc"
+                [(ngModel)]="injuriesDescription"
+                name="injuriesDescription"
+                placeholder="Describe your injuries (e.g. knee pain, back injury, shoulder pain, fractures)"
+                rows="3"
+                required
+              ></textarea>
+            </div>
+          </div>
+        }
+
+        <!-- Medical Conditions -->
+        <div class="form-group radio-section-group">
+          <label class="radio-question-label">Do you have any medical conditions? <span class="required-star">*</span></label>
+          <div class="radio-options-row">
+            <label class="radio-card" [class.active]="hasMedicalConditions() === 'yes'">
+              <input type="radio" name="hasMedicalConditions" value="yes" [ngModel]="hasMedicalConditions()" (ngModelChange)="hasMedicalConditions.set($event)" />
+              <div class="radio-dot"></div>
+              <span>Yes</span>
+            </label>
+            <label class="radio-card" [class.active]="hasMedicalConditions() === 'no'">
+              <input type="radio" name="hasMedicalConditions" value="no" [ngModel]="hasMedicalConditions()" (ngModelChange)="hasMedicalConditions.set($event)" />
+              <div class="radio-dot"></div>
+              <span>No</span>
+            </label>
+          </div>
+        </div>
+
+        @if (hasMedicalConditions() === 'yes') {
+          <div class="conditional-textarea-wrapper">
+            <div class="form-group">
+              <label for="medicalDesc">Mention your condition (Optional)</label>
+              <textarea
+                id="medicalDesc"
+                [(ngModel)]="medicalConditionsDescription"
+                name="medicalConditionsDescription"
+                placeholder="Mention your condition (e.g. diabetes, asthma, heart condition)"
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+        }
       </div>
 
-      <!-- Food Preferences Section -->
+      <!-- SECTION 3: FOOD PREFERENCES -->
       <div class="form-section">
-        <div class="section-header">
+        <div class="section-title-wrapper">
           <div class="section-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M6 13h12M6 13a2 2 0 1 0 0-4h12a2 2 0 1 0 0 4M6 13a2 2 0 0 0 0 4h12a2 2 0 0 0 0-4"></path>
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
             </svg>
           </div>
           <h3>Food Preferences</h3>
         </div>
 
-        <div class="checkbox-grid">
+        <div class="chips-container">
           @for (pref of commonFoodPreferences; track pref.name) {
-            <label class="checkbox-item">
-              <input
-                type="checkbox"
-                [checked]="pref.checked()"
-                (change)="toggleFoodPreference(pref)"
-              />
+            <button
+              type="button"
+              class="preference-chip"
+              [class.active]="pref.checked()"
+              (click)="toggleFoodPreference(pref)"
+            >
               <span>{{ pref.name }}</span>
-            </label>
+              @if (pref.checked()) {
+                <svg class="check-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M20 6L9 17l-5-5"></path>
+                </svg>
+              }
+            </button>
           }
         </div>
 
-        <div class="form-group">
-          <label for="customFoodPrefs">Other preferences (comma separated)</label>
+        <div class="form-group custom-input-group">
+          <label for="customFoodPrefs">Other Preferences</label>
           <input
             type="text"
             id="customFoodPrefs"
             [(ngModel)]="customFoodPreferences"
             name="customFoodPreferences"
-            placeholder="e.g., Vegetarian, Vegan, Keto, etc."
-            class="custom-input"
+            placeholder="Enter other preferences separated by commas"
           />
         </div>
       </div>
 
+      <!-- SECTION 4: FITNESS GOAL -->
+      <div class="form-section">
+        <div class="section-title-wrapper">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+          </div>
+          <h3>Fitness Goal</h3>
+        </div>
+        <p class="section-desc">What is your goal? <span class="required-star">*</span></p>
+
+        <div class="goals-grid">
+          <div 
+            class="goal-card" 
+            [class.active]="fitnessGoal() === 'Weight Loss'"
+            (click)="selectGoal('Weight Loss')"
+          >
+            <div class="goal-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"></path>
+              </svg>
+            </div>
+            <h4>Weight Loss</h4>
+            <p>Reduce body fat and burn calories</p>
+          </div>
+
+          <div 
+            class="goal-card" 
+            [class.active]="fitnessGoal() === 'Weight Gain'"
+            (click)="selectGoal('Weight Gain')"
+          >
+            <div class="goal-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 11l-5-5-5 5M17 18l-5-5-5 5"></path>
+              </svg>
+            </div>
+            <h4>Weight Gain</h4>
+            <p>Build muscle mass and gain size</p>
+          </div>
+
+          <div 
+            class="goal-card" 
+            [class.active]="fitnessGoal() === 'Body Recomposition'"
+            (click)="selectGoal('Body Recomposition')"
+          >
+            <div class="goal-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M21.34 8a10 10 0 0 0-.45-1.57A10 10 0 1 0 12 22a9.92 9.92 0 0 0 6.64-2.5"></path>
+              </svg>
+            </div>
+            <h4>Body Recomposition</h4>
+            <p>Lose fat while building lean muscle</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: WORKOUT PREFERENCES -->
+      <div class="form-section">
+        <div class="section-title-wrapper">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
+          <h3>Workout Preferences</h3>
+        </div>
+        <p class="section-desc">Select where you prefer to work out <span class="required-star">*</span></p>
+
+        <div class="goals-grid">
+          <div 
+            class="goal-card" 
+            [class.active]="workoutLocation() === 'Gym'"
+            (click)="workoutLocation.set('Gym')"
+          >
+            <div class="goal-icon" style="font-size: 28px; line-height: 1;">🏋️</div>
+            <h4>Gym</h4>
+            <p>Work out at a fully equipped commercial or home gym</p>
+          </div>
+
+          <div 
+            class="goal-card" 
+            [class.active]="workoutLocation() === 'Home'"
+            (click)="workoutLocation.set('Home')"
+          >
+            <div class="goal-icon" style="font-size: 28px; line-height: 1;">🏠</div>
+            <h4>Home</h4>
+            <p>Work out at home with minimal or no equipment</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORM FOOTER & SUBMIT -->
       <div class="form-footer">
-        <p class="required-note">* Required fields</p>
-        <button type="submit" class="btn-submit" [disabled]="!weight() || !height()">
+        <span class="required-msg"><span class="required-star">*</span> Required fields</span>
+        <button 
+          type="submit" 
+          class="submit-btn" 
+          [disabled]="!isProfileFormValid()"
+        >
           Submit Profile
         </button>
       </div>

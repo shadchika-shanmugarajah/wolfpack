@@ -90,6 +90,27 @@ export class ClientMonitoringComponent implements OnInit {
     return user.email.substring(0, 2).toUpperCase();
   }
 
+  getClientCompletionPercentage(userId: string): number {
+    const activity = this.dataService.getTodayActivity(userId);
+    if (!activity) return 0;
+
+    const workoutGoals = Object.values(activity.workoutGoals);
+    const meals = Object.values(activity.meals);
+    const totalItems = workoutGoals.length + meals.length;
+    if (totalItems === 0) return 0;
+
+    const completedItems =
+      workoutGoals.filter((g: any) => g.done).length + meals.filter((m: any) => m.completed).length;
+
+    return Math.round((completedItems / totalItems) * 100);
+  }
+
+  getCompletionColor(percentage: number): string {
+    if (percentage >= 80) return '#22c55e'; // Green
+    if (percentage >= 50) return '#f59e0b'; // Yellow/Amber
+    return '#ef4444'; // Red
+  }
+
   viewClientProgress(userId: string): void {
     this.router.navigate(['/admin/client-progress', userId]);
   }
