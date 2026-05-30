@@ -3,24 +3,19 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
-import { DataService, Exercise, DayWorkout } from '../../services/data.service';
+import { DataService, Exercise, DayWorkout, AssignedWorkout } from '../../services/data.service';
 
 export interface WorkoutFolder {
   folderId: string;
   folderName: string;
 }
 
-export interface WorkoutCategory {
-  categoryId: string;
-  categoryName: string;
-}
-
 export interface WorkoutTemplate {
   templateId: string;
   folderId: string; // linked to folder
-  categoryId: string; // linked to category
   title: string;
   exercises: Exercise[];
+  notes?: string;
 }
 
 @Component({
@@ -37,41 +32,44 @@ export class WorkoutPlanComponent implements OnInit {
 
   // 7 Days Weekly Plan
   days = signal<DayWorkout[]>([
-    { dayName: 'Monday', workoutTitle: '', category: '', notes: '', exercises: [] },
-    { dayName: 'Tuesday', workoutTitle: '', category: '', notes: '', exercises: [] },
-    { dayName: 'Wednesday', workoutTitle: '', category: '', notes: '', exercises: [] },
-    { dayName: 'Thursday', workoutTitle: '', category: '', notes: '', exercises: [] },
-    { dayName: 'Friday', workoutTitle: '', category: '', notes: '', exercises: [] },
-    { dayName: 'Saturday', workoutTitle: '', category: '', notes: '', exercises: [] },
-    { dayName: 'Sunday', workoutTitle: '', category: '', notes: '', exercises: [] }
+    { dayName: 'Monday', workouts: [] },
+    { dayName: 'Tuesday', workouts: [] },
+    { dayName: 'Wednesday', workouts: [] },
+    { dayName: 'Thursday', workouts: [] },
+    { dayName: 'Friday', workouts: [] },
+    { dayName: 'Saturday', workouts: [] },
+    { dayName: 'Sunday', workouts: [] }
   ]);
 
-  // Editor State
-  activeDayIndex = signal<number | null>(null);
-  activeDayWorkout = signal<DayWorkout | null>(null);
-  showCreateCategoryInput = signal(false);
-  newCategoryInputVal = signal('');
-  targetDuplicateDay = signal<string>('');
+  // Selected Day for Focused Actions / UI Highlighting
+  selectedDayIndex = signal<number>(0);
 
   // Library State
   folders = signal<WorkoutFolder[]>([]);
-  categories = signal<WorkoutCategory[]>([]);
   templates = signal<WorkoutTemplate[]>([]);
 
-  // Library Controls
+  // Folder Controls
   newFolderName = signal('');
-  newCategoryName = signal('');
-  newTemplateTitle = signal('');
-  selectedFolderId = signal('');
-  selectedCategoryId = signal('');
-
-  // Editing items inside library manager
   editingFolderId = signal<string | null>(null);
   editingFolderName = signal<string>('');
-  editingCategoryId = signal<string | null>(null);
-  editingCategoryName = signal<string>('');
-  editingTemplateId = signal<string | null>(null);
-  editingTemplateTitle = signal<string>('');
+
+  // Selected Folder for filtering templates list
+  // "" = All Templates, "unorganized" = Templates without folders
+  selectedFolderId = signal<string>('');
+
+  // Search Filter
+  searchQuery = signal<string>('');
+
+  // Editor Modal / Drawer State
+  activeDayIndex = signal<number | null>(null);
+  activeWorkoutIndex = signal<number | null>(null);
+  activeWorkout = signal<AssignedWorkout | null>(null);
+  isEditingLibraryTemplate = signal<boolean>(false);
+  activeLibraryTemplateId = signal<string | null>(null);
+  activeLibraryTemplateFolderId = signal<string>('');
+
+  // Day duplication target selection
+  targetDuplicateDay = signal<string>('');
 
   constructor(
     private route: ActivatedRoute,
@@ -89,96 +87,158 @@ export class WorkoutPlanComponent implements OnInit {
         this.clientEmail.set(user.email);
       }
 
+      // Load existing plan
       const existingPlan = this.dataService.getWorkoutPlan(userId);
       if (existingPlan) {
         this.stepsTarget.set(existingPlan.stepsTarget);
-        if (existingPlan.days && existingPlan.days.length === 7) {
-          this.days.set(existingPlan.days);
+        if (existingPlan.days) {
+          const mappedDays = existingPlan.days.map(d => {
+            const workouts = d.workouts || [];
+            
+            // Backward compatibility / Migration:
+            // Convert single day-workout elements to the array structure
+            if (workouts.length === 0 && d.exercises && d.exercises.length > 0) {
+              workouts.push({
+                id: 'legacy-' + Date.now() + '-' + Math.round(Math.random() * 1000),
+                title: d.workoutTitle || 'Assigned Workout',
+                category: d.category || 'General',
+                notes: d.notes || '',
+                exercises: d.exercises.map((e: any) => ({
+                  exerciseName: e.exerciseName || e.name || '',
+                  sets: e.sets || 3,
+                  reps: e.reps || 10,
+                  time: e.time || 'N/A',
+                  rest: e.rest || '60s',
+                  notes: e.notes || '',
+                  isCollapsed: e.isCollapsed ?? false
+                }))
+              });
+            }
+            return {
+              dayName: d.dayName,
+              workouts: workouts
+            };
+          });
+          this.days.set(mappedDays);
         } else if (existingPlan.exercises && existingPlan.exercises.length > 0) {
-          // Backward compatibility: map old structure to Monday
-          const mappedDays = [...this.days()];
-          mappedDays[0] = {
-            dayName: 'Monday',
-            workoutTitle: 'Daily Exercises',
-            category: 'Strength',
-            notes: 'Legacy workout plan',
-            exercises: existingPlan.exercises.map((e: any) => ({
-              exerciseName: e.name,
-              sets: e.sets,
-              reps: e.reps,
-              time: 'N/A',
-              rest: '60s',
-              notes: `Frequency: ${e.frequency}`
-            }))
-          };
+          // Migration from very old single exercise-list layout
+          const mappedDays = this.days().map((d, i) => {
+            if (i === 0) {
+              return {
+                dayName: 'Monday',
+                workouts: [{
+                  id: 'legacy-' + Date.now() + '-0',
+                  title: 'Daily Exercises',
+                  category: 'Strength',
+                  notes: 'Legacy workout plan',
+                  exercises: existingPlan.exercises!.map((e: any) => ({
+                    exerciseName: e.name || '',
+                    sets: e.sets || 3,
+                    reps: e.reps || 10,
+                    time: 'N/A',
+                    rest: '60s',
+                    notes: `Frequency: ${e.frequency || 'daily'}`,
+                    isCollapsed: false
+                  }))
+                }]
+              };
+            }
+            return d;
+          });
           this.days.set(mappedDays);
         }
       }
     }
+
+    // Set default duplicate target
+    const target = this.days().find((_, i) => i !== this.selectedDayIndex())?.dayName || '';
+    this.targetDuplicateDay.set(target);
 
     // Load templates library
     this.loadLibrary();
   }
 
   // ----------------------------------------------------
-  // Library Storage Operations
+  // Library Storage & Management
   // ----------------------------------------------------
   loadLibrary(): void {
     const storedFolders = localStorage.getItem('workoutFolders');
-    const storedCategories = localStorage.getItem('workoutCategories');
     const storedTemplates = localStorage.getItem('workoutTemplates');
 
-    if (storedFolders) this.folders.set(JSON.parse(storedFolders));
-    if (storedCategories) this.categories.set(JSON.parse(storedCategories));
-    if (storedTemplates) this.templates.set(JSON.parse(storedTemplates));
+    if (storedFolders) {
+      this.folders.set(JSON.parse(storedFolders));
+    }
+    if (storedTemplates) {
+      this.templates.set(JSON.parse(storedTemplates));
+    }
 
-    // If completely empty, seed initial data for demonstration
-    if (!storedFolders && !storedCategories && !storedTemplates) {
+    // Seed default folders and templates if none exist
+    if (!storedFolders || this.folders().length === 0) {
       const demoFolders: WorkoutFolder[] = [
-        { folderId: 'f1', folderName: 'Strength Training' },
-        { folderId: 'f2', folderName: 'Cardio Splits' }
+        { folderId: 'f1', folderName: 'Cardio Exercises' },
+        { folderId: 'f2', folderName: 'Push Day Split' },
+        { folderId: 'f3', folderName: 'Pull Day Split' },
+        { folderId: 'f4', folderName: 'Leg Day' },
+        { folderId: 'f5', folderName: 'HIIT' },
+        { folderId: 'f6', folderName: 'Fat Loss' }
       ];
-      const demoCategories: WorkoutCategory[] = [
-        { categoryId: 'c1', categoryName: 'Push' },
-        { categoryId: 'c2', categoryName: 'Pull' },
-        { categoryId: 'c3', categoryName: 'Legs' },
-        { categoryId: 'c4', categoryName: 'HIIT' }
-      ];
-      const demoTemplates: WorkoutTemplate[] = [
-        {
-          templateId: 't1',
-          folderId: 'f1',
-          categoryId: 'c1',
-          title: 'Push Day Split',
-          exercises: [
-            { exerciseName: 'Barbell Bench Press', sets: 4, reps: 10, time: 'N/A', rest: '90s', notes: 'Keep elbows slightly tucked' },
-            { exerciseName: 'Dumbbell Overhead Press', sets: 3, reps: 10, time: 'N/A', rest: '90s', notes: 'Full range of motion' },
-            { exerciseName: 'Tricep Rope Pushdowns', sets: 3, reps: 12, time: 'N/A', rest: '60s', notes: 'Squeeze at the bottom' }
-          ]
-        },
-        {
-          templateId: 't2',
-          folderId: 'f1',
-          categoryId: 'c2',
-          title: 'Pull Day Split',
-          exercises: [
-            { exerciseName: 'Deadlift', sets: 4, reps: 5, time: 'N/A', rest: '120s', notes: 'Flat back, engage core' },
-            { exerciseName: 'Pull-ups', sets: 3, reps: 8, time: 'N/A', rest: '90s', notes: 'Controlled negative' },
-            { exerciseName: 'Barbell Bicep Curls', sets: 3, reps: 12, time: 'N/A', rest: '60s', notes: 'No swinging' }
-          ]
-        }
-      ];
-
       this.folders.set(demoFolders);
-      this.categories.set(demoCategories);
-      this.templates.set(demoTemplates);
+
+      if (!storedTemplates || this.templates().length === 0) {
+        const demoTemplates: WorkoutTemplate[] = [
+          {
+            templateId: 't1',
+            folderId: 'f2', // Push Day Split
+            title: 'Beginner Push',
+            notes: 'Rest 90 seconds between sets.',
+            exercises: [
+              { exerciseName: 'Barbell Bench Press', sets: 3, reps: 10, time: 'N/A', rest: '90s', notes: 'Keep form strict' },
+              { exerciseName: 'Dumbbell Overhead Press', sets: 3, reps: 10, time: 'N/A', rest: '90s', notes: 'Full extension' },
+              { exerciseName: 'Lying Tricep Extensions', sets: 3, reps: 12, time: 'N/A', rest: '60s', notes: 'Slow negatives' }
+            ]
+          },
+          {
+            templateId: 't2',
+            folderId: 'f2', // Push Day Split
+            title: 'Intermediate Push',
+            notes: 'Warm-up sets first.',
+            exercises: [
+              { exerciseName: 'Incline Dumbbell Press', sets: 4, reps: 8, time: 'N/A', rest: '90s', notes: '45-degree angle' },
+              { exerciseName: 'Overhead Press', sets: 4, reps: 8, time: 'N/A', rest: '90s', notes: 'Engage core' },
+              { exerciseName: 'Cable Chest Flys', sets: 3, reps: 12, time: 'N/A', rest: '60s', notes: 'Peak contraction' },
+              { exerciseName: 'Tricep Rope Pushdowns', sets: 3, reps: 12, time: 'N/A', rest: '60s', notes: 'Squeeze at bottom' }
+            ]
+          },
+          {
+            templateId: 't3',
+            folderId: 'f3', // Pull Day Split
+            title: 'Beginner Pull',
+            notes: 'Warm up properly.',
+            exercises: [
+              { exerciseName: 'Lat Pulldowns', sets: 3, reps: 10, time: 'N/A', rest: '90s', notes: 'Squeeze shoulder blades' },
+              { exerciseName: 'Seated Cable Rows', sets: 3, reps: 10, time: 'N/A', rest: '90s', notes: 'Keep back straight' },
+              { exerciseName: 'Dumbbell Hammer Curls', sets: 3, reps: 12, time: 'N/A', rest: '60s', notes: 'Controlled release' }
+            ]
+          },
+          {
+            templateId: 't4',
+            folderId: 'f1', // Cardio Exercises
+            title: 'Beginner Cardio',
+            notes: 'Easy pace cardio split.',
+            exercises: [
+              { exerciseName: 'Treadmill Jog', sets: 1, reps: 1, time: '20 mins', rest: 'N/A', notes: 'Steady state pace' },
+              { exerciseName: 'Stationary Bike', sets: 1, reps: 1, time: '15 mins', rest: 'N/A', notes: 'Moderate resistance' }
+            ]
+          }
+        ];
+        this.templates.set(demoTemplates);
+      }
       this.saveLibrary();
     }
   }
 
   saveLibrary(): void {
     localStorage.setItem('workoutFolders', JSON.stringify(this.folders()));
-    localStorage.setItem('workoutCategories', JSON.stringify(this.categories()));
     localStorage.setItem('workoutTemplates', JSON.stringify(this.templates()));
   }
 
@@ -189,7 +249,7 @@ export class WorkoutPlanComponent implements OnInit {
     const name = this.newFolderName().trim();
     if (!name) return;
     const newFolder: WorkoutFolder = {
-      folderId: Date.now().toString(),
+      folderId: 'fld-' + Date.now(),
       folderName: name
     };
     this.folders.set([...this.folders(), newFolder]);
@@ -197,13 +257,13 @@ export class WorkoutPlanComponent implements OnInit {
     this.saveLibrary();
   }
 
-  startEditFolder(folder: WorkoutFolder, event: Event): void {
+  startRenameFolder(folder: WorkoutFolder, event: Event): void {
     event.stopPropagation();
     this.editingFolderId.set(folder.folderId);
     this.editingFolderName.set(folder.folderName);
   }
 
-  saveEditFolder(event: Event): void {
+  saveRenameFolder(event: Event): void {
     event.stopPropagation();
     const id = this.editingFolderId();
     const name = this.editingFolderName().trim();
@@ -216,124 +276,228 @@ export class WorkoutPlanComponent implements OnInit {
 
   deleteFolder(folderId: string, event: Event): void {
     event.stopPropagation();
-    if (confirm('Delete this folder? Templates inside it will be moved to unorganized.')) {
+    if (confirm('Are you sure you want to delete this folder? Workout templates inside will be moved to Unorganized.')) {
       this.folders.set(this.folders().filter(f => f.folderId !== folderId));
       this.templates.set(this.templates().map(t => t.folderId === folderId ? { ...t, folderId: '' } : t));
+      if (this.selectedFolderId() === folderId) {
+        this.selectedFolderId.set(''); // Go back to All
+      }
       this.saveLibrary();
     }
   }
 
-  // ----------------------------------------------------
-  // Category CRUD
-  // ----------------------------------------------------
-  createCategory(): void {
-    const name = this.newCategoryName().trim();
-    if (!name) return;
-    const newCat: WorkoutCategory = {
-      categoryId: Date.now().toString(),
-      categoryName: name
-    };
-    this.categories.set([...this.categories(), newCat]);
-    this.newCategoryName.set('');
-    this.saveLibrary();
+  selectFolder(folderId: string): void {
+    this.selectedFolderId.set(folderId);
   }
 
-  startEditCategory(cat: WorkoutCategory, event: Event): void {
+  // ----------------------------------------------------
+  // Template CRUD (Library)
+  // ----------------------------------------------------
+  getFilteredTemplates(): WorkoutTemplate[] {
+    const folderId = this.selectedFolderId();
+    const query = this.searchQuery().toLowerCase().trim();
+
+    return this.templates().filter(t => {
+      const matchesFolder =
+        folderId === '' ||
+        (folderId === 'unorganized' && !t.folderId) ||
+        t.folderId === folderId;
+
+      const matchesSearch =
+        !query ||
+        t.title.toLowerCase().includes(query) ||
+        t.exercises.some(e => e.exerciseName.toLowerCase().includes(query));
+
+      return matchesFolder && matchesSearch;
+    });
+  }
+
+  createTemplate(): void {
+    this.isEditingLibraryTemplate.set(true);
+    this.activeLibraryTemplateId.set(null);
+    this.activeLibraryTemplateFolderId.set(
+      this.selectedFolderId() !== 'unorganized' ? this.selectedFolderId() : ''
+    );
+    this.activeWorkout.set({
+      id: '',
+      title: '',
+      category: '',
+      notes: '',
+      exercises: []
+    });
+    this.activeDayIndex.set(null);
+    this.activeWorkoutIndex.set(null);
+  }
+
+  startEditTemplate(temp: WorkoutTemplate, event: Event): void {
     event.stopPropagation();
-    this.editingCategoryId.set(cat.categoryId);
-    this.editingCategoryName.set(cat.categoryName);
+    this.isEditingLibraryTemplate.set(true);
+    this.activeLibraryTemplateId.set(temp.templateId);
+    this.activeLibraryTemplateFolderId.set(temp.folderId || '');
+    this.activeWorkout.set({
+      id: temp.templateId,
+      title: temp.title,
+      category: '',
+      notes: temp.notes || '',
+      exercises: temp.exercises.map(e => ({ ...e, isCollapsed: e.isCollapsed ?? false }))
+    });
+    this.activeDayIndex.set(null);
+    this.activeWorkoutIndex.set(null);
   }
 
-  saveEditCategory(event: Event): void {
-    event.stopPropagation();
-    const id = this.editingCategoryId();
-    const name = this.editingCategoryName().trim();
-    if (!id || !name) return;
-
-    this.categories.set(this.categories().map(c => c.categoryId === id ? { ...c, categoryName: name } : c));
-    this.editingCategoryId.set(null);
-    this.saveLibrary();
-  }
-
-  deleteCategory(categoryId: string, event: Event): void {
-    event.stopPropagation();
-    if (confirm('Delete this category? Templates in this category will be reset to unassigned.')) {
-      this.categories.set(this.categories().filter(c => c.categoryId !== categoryId));
-      this.templates.set(this.templates().map(t => t.categoryId === categoryId ? { ...t, categoryId: '' } : t));
-      this.saveLibrary();
-    }
-  }
-
-  // ----------------------------------------------------
-  // Template CRUD in Library
-  // ----------------------------------------------------
   deleteTemplate(templateId: string, event: Event): void {
     event.stopPropagation();
-    if (confirm('Delete this template permanently?')) {
+    if (confirm('Delete this template permanently from library?')) {
       this.templates.set(this.templates().filter(t => t.templateId !== templateId));
       this.saveLibrary();
     }
   }
 
-  duplicateTemplateInLibrary(template: WorkoutTemplate, event: Event): void {
-    event.stopPropagation();
-    const newTemplate: WorkoutTemplate = {
-      ...template,
-      templateId: (Date.now() + Math.random()).toString(),
-      title: `${template.title} (Copy)`,
-      exercises: template.exercises.map(e => ({ ...e }))
-    };
-    this.templates.set([...this.templates(), newTemplate]);
-    this.saveLibrary();
-  }
-
   // ----------------------------------------------------
-  // Day Workout Editor Panel Trigger
+  // Assignment Operations (Mon-Sun Schedule)
   // ----------------------------------------------------
-  editDay(index: number): void {
-    this.activeDayIndex.set(index);
-    const dayData = this.days()[index];
-    // Copy data to activeState to enable cancel/close actions
-    this.activeDayWorkout.set({
-      dayName: dayData.dayName,
-      workoutTitle: dayData.workoutTitle,
-      category: dayData.category,
-      notes: dayData.notes,
-      exercises: dayData.exercises.map(e => ({ ...e, isCollapsed: e.isCollapsed ?? false }))
-    });
-    this.showCreateCategoryInput.set(false);
-    // Find first day that isn't the active day to set as default duplicate target
-    const target = this.days().find((_, i) => i !== index)?.dayName || '';
-    this.targetDuplicateDay.set(target);
-  }
-
-  closeEditor(): void {
-    this.activeDayIndex.set(null);
-    this.activeDayWorkout.set(null);
-  }
-
-  saveDayWorkout(): void {
-    const idx = this.activeDayIndex();
-    const active = this.activeDayWorkout();
-    if (idx === null || !active) return;
-
+  assignTemplateToDay(temp: WorkoutTemplate, dayIndex: number): void {
     const list = [...this.days()];
-    list[idx] = {
-      dayName: active.dayName,
-      workoutTitle: active.workoutTitle.trim() || 'Rest/General Workout',
-      category: active.category,
-      notes: active.notes,
-      exercises: active.exercises.map(e => ({ ...e }))
+    const day = list[dayIndex];
+    if (!day.workouts) {
+      day.workouts = [];
+    }
+
+    const newAssignment: AssignedWorkout = {
+      id: 'asg-' + Date.now() + '-' + Math.round(Math.random() * 1000),
+      templateId: temp.templateId,
+      title: temp.title,
+      notes: temp.notes || '',
+      exercises: temp.exercises.map(e => ({ ...e, isCollapsed: false }))
     };
+
+    day.workouts.push(newAssignment);
     this.days.set(list);
+  }
+
+  removeAssignment(dayIndex: number, workoutId: string, event: Event): void {
+    event.stopPropagation();
+    const list = [...this.days()];
+    const day = list[dayIndex];
+    if (day.workouts) {
+      day.workouts = day.workouts.filter(w => w.id !== workoutId);
+      this.days.set(list);
+    }
+  }
+
+  startEditAssignment(dayIndex: number, workoutIndex: number, event: Event): void {
+    event.stopPropagation();
+    const list = this.days();
+    const day = list[dayIndex];
+    if (!day.workouts || !day.workouts[workoutIndex]) return;
+
+    const workout = day.workouts[workoutIndex];
+    this.isEditingLibraryTemplate.set(false);
+    this.activeDayIndex.set(dayIndex);
+    this.activeWorkoutIndex.set(workoutIndex);
+    this.activeWorkout.set({
+      id: workout.id,
+      templateId: workout.templateId,
+      title: workout.title,
+      category: workout.category || '',
+      notes: workout.notes || '',
+      exercises: workout.exercises.map(e => ({ ...e, isCollapsed: e.isCollapsed ?? false }))
+    });
+  }
+
+  addCustomWorkoutToDay(dayIndex: number): void {
+    const list = [...this.days()];
+    const day = list[dayIndex];
+    if (!day.workouts) day.workouts = [];
+
+    const newAssignment: AssignedWorkout = {
+      id: 'asg-' + Date.now() + '-' + Math.round(Math.random() * 1000),
+      title: 'Custom Workout',
+      notes: '',
+      exercises: []
+    };
+
+    day.workouts.push(newAssignment);
+    this.days.set(list);
+
+    // Immediately open in editor
+    this.startEditAssignment(dayIndex, day.workouts.length - 1, { stopPropagation: () => {} } as Event);
+  }
+
+  // ----------------------------------------------------
+  // Editor Drawer Actions
+  // ----------------------------------------------------
+  closeEditor(): void {
+    this.activeWorkout.set(null);
+    this.activeDayIndex.set(null);
+    this.activeWorkoutIndex.set(null);
+    this.activeLibraryTemplateId.set(null);
+  }
+
+  saveActiveWorkout(): void {
+    const active = this.activeWorkout();
+    if (!active) return;
+
+    const title = active.title.trim() || 'Untitled Workout';
+
+    if (this.isEditingLibraryTemplate()) {
+      const templateId = this.activeLibraryTemplateId();
+      if (templateId) {
+        // Edit existing library template
+        this.templates.set(
+          this.templates().map(t =>
+            t.templateId === templateId
+              ? {
+                  ...t,
+                  folderId: this.activeLibraryTemplateFolderId(),
+                  title: title,
+                  notes: active.notes,
+                  exercises: active.exercises.map(e => ({ ...e }))
+                }
+              : t
+          )
+        );
+      } else {
+        // Create new library template
+        const newTemp: WorkoutTemplate = {
+          templateId: 'tmp-' + Date.now(),
+          folderId: this.activeLibraryTemplateFolderId(),
+          title: title,
+          notes: active.notes,
+          exercises: active.exercises.map(e => ({ ...e }))
+        };
+        this.templates.set([...this.templates(), newTemp]);
+      }
+      this.saveLibrary();
+    } else {
+      // Edit day assignment instance
+      const dayIdx = this.activeDayIndex();
+      const wIdx = this.activeWorkoutIndex();
+
+      if (dayIdx !== null && wIdx !== null) {
+        const list = [...this.days()];
+        const day = list[dayIdx];
+        if (day.workouts && day.workouts[wIdx]) {
+          day.workouts[wIdx] = {
+            ...day.workouts[wIdx],
+            title: title,
+            notes: active.notes,
+            category: active.category,
+            exercises: active.exercises.map(e => ({ ...e }))
+          };
+          this.days.set(list);
+        }
+      }
+    }
+
     this.closeEditor();
   }
 
   // ----------------------------------------------------
-  // Exercise Item Operations in Editor
+  // Exercise CRUD inside Editor Drawer
   // ----------------------------------------------------
   addExerciseToActive(): void {
-    const active = this.activeDayWorkout();
+    const active = this.activeWorkout();
     if (!active) return;
 
     const newEx: Exercise = {
@@ -347,33 +511,34 @@ export class WorkoutPlanComponent implements OnInit {
     };
 
     active.exercises.push(newEx);
-    this.activeDayWorkout.set({ ...active });
+    this.activeWorkout.set({ ...active });
   }
 
   removeExerciseFromActive(index: number): void {
-    const active = this.activeDayWorkout();
+    const active = this.activeWorkout();
     if (!active) return;
 
     active.exercises = active.exercises.filter((_, i) => i !== index);
-    this.activeDayWorkout.set({ ...active });
+    this.activeWorkout.set({ ...active });
   }
 
   duplicateExerciseInActive(index: number): void {
-    const active = this.activeDayWorkout();
+    const active = this.activeWorkout();
     if (!active) return;
 
     const source = active.exercises[index];
     const copy: Exercise = {
       ...source,
-      exerciseName: source.exerciseName ? `${source.exerciseName} (Copy)` : ''
+      exerciseName: source.exerciseName ? `${source.exerciseName} (Copy)` : '',
+      isCollapsed: false
     };
-    // Insert after current index
+
     active.exercises.splice(index + 1, 0, copy);
-    this.activeDayWorkout.set({ ...active });
+    this.activeWorkout.set({ ...active });
   }
 
   moveExercise(index: number, direction: 'up' | 'down'): void {
-    const active = this.activeDayWorkout();
+    const active = this.activeWorkout();
     if (!active) return;
 
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -382,229 +547,122 @@ export class WorkoutPlanComponent implements OnInit {
     const temp = active.exercises[index];
     active.exercises[index] = active.exercises[targetIndex];
     active.exercises[targetIndex] = temp;
-    this.activeDayWorkout.set({ ...active });
+    this.activeWorkout.set({ ...active });
   }
 
   toggleCollapseExercise(index: number): void {
-    const active = this.activeDayWorkout();
+    const active = this.activeWorkout();
     if (!active) return;
     active.exercises[index].isCollapsed = !active.exercises[index].isCollapsed;
-    this.activeDayWorkout.set({ ...active });
+    this.activeWorkout.set({ ...active });
   }
 
   // ----------------------------------------------------
-  // Load Template & Category Selection
+  // Day Schedule Level Operations
   // ----------------------------------------------------
-  loadTemplateIntoActive(templateId: string): void {
-    if (!templateId) return;
-    const template = this.templates().find(t => t.templateId === templateId);
-    const active = this.activeDayWorkout();
-    if (!template || !active) return;
-
-    active.workoutTitle = template.title;
-    // Map template category
-    const cat = this.categories().find(c => c.categoryId === template.categoryId);
-    active.category = cat ? cat.categoryName : '';
-    // Copy exercises
-    active.exercises = template.exercises.map(e => ({ ...e, isCollapsed: false }));
-    this.activeDayWorkout.set({ ...active });
-  }
-
-  handleCategorySelect(val: string): void {
-    const active = this.activeDayWorkout();
-    if (!active) return;
-
-    if (val === '__new__') {
-      this.showCreateCategoryInput.set(true);
-      this.newCategoryInputVal.set('');
-      active.category = '';
-    } else {
-      this.showCreateCategoryInput.set(false);
-      active.category = val;
-    }
-    this.activeDayWorkout.set({ ...active });
-  }
-
-  saveNewCategoryInline(): void {
-    const name = this.newCategoryInputVal().trim();
-    const active = this.activeDayWorkout();
-    if (!name || !active) return;
-
-    // Create category in library
-    const newCatId = Date.now().toString();
-    const newCat: WorkoutCategory = {
-      categoryId: newCatId,
-      categoryName: name
-    };
-    this.categories.set([...this.categories(), newCat]);
-    this.saveLibrary();
-
-    // Assign to active
-    active.category = name;
-    this.activeDayWorkout.set({ ...active });
-    this.showCreateCategoryInput.set(false);
-  }
-
-  // ----------------------------------------------------
-  // Template Saving & Day Duplication Actions
-  // ----------------------------------------------------
-  saveActiveAsTemplate(): void {
-    const active = this.activeDayWorkout();
-    if (!active) return;
-
-    if (!active.workoutTitle.trim()) {
-      alert('Please enter a workout title before saving as template.');
-      return;
-    }
-
-    const tName = prompt('Enter a name for this template:', active.workoutTitle);
-    if (tName === null) return; // Cancelled
-    const finalName = tName.trim() || active.workoutTitle;
-
-    // Optional folder selection
-    let folderPromptMsg = 'Organize in folder?\nSelect number:\n0: None (Unorganized)\n';
-    this.folders().forEach((f, i) => {
-      folderPromptMsg += `${i + 1}: ${f.folderName}\n`;
-    });
-    const folderIdxStr = prompt(folderPromptMsg, '0');
-    let fId = '';
-    if (folderIdxStr !== null) {
-      const idx = parseInt(folderIdxStr) - 1;
-      if (idx >= 0 && idx < this.folders().length) {
-        fId = this.folders()[idx].folderId;
-      }
-    }
-
-    // Match active category
-    const catMatch = this.categories().find(c => c.categoryName.toLowerCase() === active.category.toLowerCase());
-    let cId = catMatch ? catMatch.categoryId : '';
-
-    const newTemplate: WorkoutTemplate = {
-      templateId: Date.now().toString(),
-      folderId: fId,
-      categoryId: cId,
-      title: finalName,
-      exercises: active.exercises.map(e => ({ ...e }))
-    };
-
-    this.templates.set([...this.templates(), newTemplate]);
-    this.saveLibrary();
-    alert(`Successfully saved template "${finalName}" to library!`);
-  }
-
-  duplicateActiveDayToTarget(): void {
-    const active = this.activeDayWorkout();
-    const target = this.targetDuplicateDay();
-    if (!active || !target) return;
-
+  duplicateDay(fromDayIndex: number, targetDayName: string): void {
     const list = [...this.days()];
-    const targetIdx = list.findIndex(d => d.dayName === target);
-    if (targetIdx === -1) return;
+    const sourceDay = list[fromDayIndex];
+    const targetIdx = list.findIndex(d => d.dayName === targetDayName);
 
-    list[targetIdx] = {
-      dayName: target,
-      workoutTitle: active.workoutTitle || 'Rest/General Workout',
-      category: active.category,
-      notes: active.notes,
-      exercises: active.exercises.map(e => ({ ...e }))
-    };
+    if (targetIdx === -1 || !sourceDay.workouts) return;
+
+    list[targetIdx].workouts = sourceDay.workouts.map(w => ({
+      ...w,
+      id: 'asg-' + Date.now() + '-' + Math.round(Math.random() * 10000),
+      exercises: w.exercises.map(e => ({ ...e }))
+    }));
+
     this.days.set(list);
-    alert(`Successfully duplicated workout to ${target}!`);
+    alert(`Successfully duplicated workouts to ${targetDayName}!`);
   }
 
-  clearActiveDay(): void {
-    const active = this.activeDayWorkout();
-    if (!active) return;
-
-    if (confirm('Clear all fields and exercises for this day?')) {
-      active.workoutTitle = '';
-      active.category = '';
-      active.notes = '';
-      active.exercises = [];
-      this.activeDayWorkout.set({ ...active });
-    }
-  }
-
-  clearDayIndex(index: number, event: Event): void {
-    event.stopPropagation();
-    if (confirm(`Clear all workout plans for ${this.days()[index].dayName}?`)) {
+  clearDayWorkouts(dayIndex: number): void {
+    if (confirm(`Clear all workout plans for ${this.days()[dayIndex].dayName}?`)) {
       const list = [...this.days()];
-      list[index] = {
-        dayName: list[index].dayName,
-        workoutTitle: '',
-        category: '',
-        notes: '',
-        exercises: []
-      };
+      list[dayIndex].workouts = [];
       this.days.set(list);
     }
   }
 
   // ----------------------------------------------------
-  // Publish Plan (Weekly Workflow final step)
+  // Publish Plan (Submit to DataService & redirect)
   // ----------------------------------------------------
   savePlan(): void {
     if (!this.userId()) return;
 
-    // Save Workout Plan
+    // Compile workout plan, saving both new list structure and legacy fields (for old components)
     const plan = {
       userId: this.userId()!,
-      days: this.days().map(d => ({
-        dayName: d.dayName,
-        workoutTitle: d.workoutTitle,
-        category: d.category,
-        notes: d.notes,
-        exercises: d.exercises.map(e => ({ ...e }))
-      })),
+      days: this.days().map(d => {
+        const flatExercises: Exercise[] = [];
+        const titles: string[] = [];
+        const categories: string[] = [];
+
+        const workoutsList = d.workouts || [];
+        workoutsList.forEach(w => {
+          flatExercises.push(...w.exercises.map(e => ({ ...e })));
+          if (w.title) titles.push(w.title);
+          if (w.category) categories.push(w.category);
+        });
+
+        return {
+          dayName: d.dayName,
+          workoutTitle: titles.join(' + ') || 'Rest Day',
+          category: categories.join(', ') || '',
+          notes: workoutsList.map(w => w.notes ? `${w.title}: ${w.notes}` : '').filter(n => n).join('\n'),
+          exercises: flatExercises,
+          workouts: workoutsList.map(w => ({
+            id: w.id,
+            templateId: w.templateId,
+            title: w.title,
+            category: w.category,
+            notes: w.notes,
+            exercises: w.exercises.map(e => ({ ...e }))
+          }))
+        };
+      }),
       stepsTarget: this.stepsTarget()
     };
 
     this.dataService.saveWorkoutPlan(plan);
 
-    // Update today's activity pushups & steps goals
-    const today = new Date().toISOString().split('T')[0];
-    const activity = this.dataService.getTodayActivity(this.userId()!);
-
-    // Check if there are pushups exercises assigned in today's workout plan
+    // Sync targets to today's active schedule for pushup tracking
     const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' }); // e.g. "Monday"
     const todayWorkout = this.days().find(d => d.dayName === todayName);
-    
+    const activity = this.dataService.getTodayActivity(this.userId()!);
+
     let todayPushupsTarget = 0;
-    if (todayWorkout) {
-      const pushupExercises = todayWorkout.exercises.filter(e => e.exerciseName.toLowerCase().includes('push'));
-      pushupExercises.forEach(e => {
-        todayPushupsTarget += (e.reps * e.sets);
+    if (todayWorkout && todayWorkout.workouts) {
+      todayWorkout.workouts.forEach(w => {
+        const pushupExercises = w.exercises.filter(e => e.exerciseName.toLowerCase().includes('push'));
+        pushupExercises.forEach(e => {
+          todayPushupsTarget += (e.reps * e.sets);
+        });
       });
     }
 
     if (todayPushupsTarget > 0) {
       activity.workoutGoals.pushups.target = todayPushupsTarget;
     } else {
-      // Find average pushups in exercises or keep standard 50/100
-      const pushupExc = this.days()
-        .flatMap(d => d.exercises)
-        .find(e => e.exerciseName.toLowerCase().includes('push'));
-      if (pushupExc) {
-        activity.workoutGoals.pushups.target = pushupExc.reps * pushupExc.sets;
+      // Look for a pushup exercise globally in the week as a target fallback
+      let fallbackPushups = 0;
+      this.days().forEach(d => {
+        (d.workouts || []).forEach(w => {
+          const pushupExc = w.exercises.find(e => e.exerciseName.toLowerCase().includes('push'));
+          if (pushupExc && fallbackPushups === 0) {
+            fallbackPushups = pushupExc.reps * pushupExc.sets;
+          }
+        });
+      });
+      if (fallbackPushups > 0) {
+        activity.workoutGoals.pushups.target = fallbackPushups;
       }
     }
-    
+
     activity.workoutGoals.steps.target = this.stepsTarget();
     this.dataService.saveDailyActivity(this.userId()!, activity);
 
     this.router.navigate(['/admin/dashboard']);
-  }
-
-  getFolderTemplates(folderId: string): WorkoutTemplate[] {
-    return this.templates().filter(t => t.folderId === folderId);
-  }
-
-  getUnorganizedTemplates(): WorkoutTemplate[] {
-    const folderIds = this.folders().map(f => f.folderId);
-    return this.templates().filter(t => !t.folderId || !folderIds.includes(t.folderId));
-  }
-
-  getCategoryTemplates(categoryId: string): WorkoutTemplate[] {
-    return this.templates().filter(t => t.categoryId === categoryId);
   }
 }

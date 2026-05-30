@@ -12,6 +12,8 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent implements OnInit {
+  showSplash = signal(true);
+  fadeSplash = signal(false);
   isSignup = signal(false);
   email = signal('');
   password = signal('');
@@ -50,6 +52,14 @@ export class LoginComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Start splash screen animation
+    setTimeout(() => {
+      this.fadeSplash.set(true);
+      setTimeout(() => {
+        this.showSplash.set(false);
+      }, 500); // match transition duration
+    }, 1800);
+
     const remember = localStorage.getItem('rememberMe') === 'true';
     this.rememberMe.set(remember);
     if (remember) {

@@ -150,8 +150,8 @@ $error-red: #ef4444;
     }
 
     &:hover:not(.selected) {
-      border-color: rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(155, 28, 49, 0.3);
+      background: rgba(155, 28, 49, 0.04);
       color: $text-primary;
       transform: translateY(-2px);
 
@@ -606,4 +606,111 @@ $error-red: #ef4444;
     box-shadow: 0 10px 30px rgba(155, 28, 49, 0.15);
     border-color: rgba(155, 28, 49, 0.35);
   }
+}
+
+// Splash Welcome Branding Screen
+.splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #000000;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+
+  &.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .branding-logo-wrapper {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: splashScaleUp 1s cubic-bezier(0.16, 1, 0.3, 1);
+
+    .dumbbell-logo {
+      margin-bottom: 24px;
+      filter: drop-shadow(0 0 25px rgba(155, 28, 49, 0.45));
+      animation: logoPulse 2s infinite ease-in-out;
+    }
+
+    .brand-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #ffffff;
+      margin: 0 0 8px 0;
+      background: linear-gradient(135deg, #ffffff 0%, #9ca3af 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-tagline {
+      font-size: 14px;
+      font-weight: 500;
+      color: #9b1c31;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin: 0 0 40px 0;
+    }
+
+    // Loading indicator
+    .loading-ring {
+      display: inline-block;
+      position: relative;
+      width: 48px;
+      height: 48px;
+
+      div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 38px;
+        height: 38px;
+        margin: 5px;
+        border: 3px solid #9b1c31;
+        border-radius: 50%;
+        animation: loadingRing 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        border-color: #9b1c31 transparent transparent transparent;
+
+        &:nth-child(1) { animation-delay: -0.45s; }
+        &:nth-child(2) { animation-delay: -0.3s; }
+        &:nth-child(3) { animation-delay: -0.15s; }
+      }
+    }
+  }
+}
+
+@keyframes splashScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes logoPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 20px rgba(155, 28, 49, 0.35));
+  }
+  50% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 0 35px rgba(155, 28, 49, 0.6));
+  }
+}
+
+@keyframes loadingRing {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

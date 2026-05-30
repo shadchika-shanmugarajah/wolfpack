@@ -15,6 +15,7 @@ import { DataService } from '../../services/data.service';
 export class ClientSetupComponent {
   weight = signal<number | null>(null);
   height = signal<number | null>(null);
+  goalWeight = signal<number | null>(null);
   hasAllergies = signal(false);
   customAllergies = signal('');
   
@@ -109,10 +110,10 @@ export class ClientSetupComponent {
     return { underweight, normal, overweight, obese };
   });
 
-  // Validation Computes
   isProfileFormValid = computed(() => {
     const w = this.weight();
     const h = this.height();
+    const gw = this.goalWeight();
     const goal = this.fitnessGoal();
     const loc = this.workoutLocation();
     const injuries = this.pastInjuries();
@@ -120,6 +121,7 @@ export class ClientSetupComponent {
     const medical = this.hasMedicalConditions();
 
     if (!w || w <= 0 || !h || h <= 0) return false;
+    if (!gw || gw <= 0) return false;
     if (!goal) return false;
     if (!loc) return false;
     if (injuries === null) return false;
@@ -187,7 +189,8 @@ export class ClientSetupComponent {
       foodPreferences: selectedFoodPrefs.join(', ') || 'None',
       pastInjuries: this.pastInjuries() === 'yes' ? this.injuriesDescription().trim() : 'None',
       fitnessGoal: this.fitnessGoal()!,
-      workoutLocation: this.workoutLocation()!
+      workoutLocation: this.workoutLocation()!,
+      goalWeight: this.goalWeight()!
     };
 
     this.dataService.saveClientProfile(profile);

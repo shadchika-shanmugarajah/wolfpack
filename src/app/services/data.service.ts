@@ -11,6 +11,7 @@ export interface ClientProfile {
   pastInjuries?: string;
   fitnessGoal?: string;
   workoutLocation?: string;
+  goalWeight?: number;
 }
 
 export interface DailyActivity {
@@ -30,6 +31,20 @@ export interface DailyActivity {
   weight?: number;
   caloriesConsumed?: number;
   caloriesBurned?: number;
+  todayWorkout?: {
+    title: string;
+    category: string;
+    notes: string;
+    exercises: {
+      exerciseName: string;
+      sets: number;
+      reps: number;
+      time: string;
+      rest: string;
+      notes: string;
+      completed: boolean;
+    }[];
+  };
 }
 
 export interface FoodItem {
@@ -38,6 +53,9 @@ export interface FoodItem {
   calories: number;
   consumed?: boolean; // Track if client consumed this item
   isPrescribed?: boolean; // Track if this is from trainer's plan (not removable)
+  protein?: number;
+  carbs?: number;
+  fat?: number;
 }
 
 export interface DietPlan {
@@ -61,12 +79,22 @@ export interface WorkoutPlan {
   days?: DayWorkout[];
 }
 
+export interface AssignedWorkout {
+  id: string;
+  templateId?: string;
+  title: string;
+  category?: string;
+  notes?: string;
+  exercises: Exercise[];
+}
+
 export interface DayWorkout {
   dayName: string;
-  workoutTitle: string;
-  category: string;
-  notes: string;
-  exercises: Exercise[];
+  workoutTitle?: string;
+  category?: string;
+  notes?: string;
+  exercises?: Exercise[];
+  workouts?: AssignedWorkout[];
 }
 
 export interface Exercise {
@@ -248,6 +276,13 @@ export class DataService {
     return measurements[1]; // Second item (after current month)
   }
 
+  getFoodMacros(item: FoodItem) {
+    const protein = item.protein !== undefined ? item.protein : Math.round((item.calories * 0.3) / 4);
+    const carbs = item.carbs !== undefined ? item.carbs : Math.round((item.calories * 0.4) / 4);
+    const fat = item.fat !== undefined ? item.fat : Math.round((item.calories * 0.3) / 9);
+    return { protein, carbs, fat };
+  }
+
   loadFromStorage(): void {
     const profiles = localStorage.getItem('clientProfiles');
     if (profiles) {
@@ -284,7 +319,8 @@ export class DataService {
         allergies: [],
         medicalConditions: 'None',
         foodPreferences: 'Non-Vegetarian',
-        workoutLocation: 'Gym'
+        workoutLocation: 'Gym',
+        goalWeight: 55
       });
       localStorage.setItem('clientProfiles', JSON.stringify(Array.from(this.clientProfiles.entries())));
     }
