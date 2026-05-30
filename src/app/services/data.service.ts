@@ -14,6 +14,22 @@ export interface ClientProfile {
   goalWeight?: number;
 }
 
+export interface DailyActivityWorkout {
+  id: string;
+  title: string;
+  category?: string;
+  notes?: string;
+  exercises: {
+    exerciseName: string;
+    sets: number;
+    reps: number;
+    time: string;
+    rest: string;
+    notes: string;
+    completed: boolean;
+  }[];
+}
+
 export interface DailyActivity {
   date: string;
   workoutGoals: {
@@ -31,6 +47,8 @@ export interface DailyActivity {
   weight?: number;
   caloriesConsumed?: number;
   caloriesBurned?: number;
+  sleepHours?: number;
+  waterIntake?: number; // in ml
   todayWorkout?: {
     title: string;
     category: string;
@@ -44,6 +62,13 @@ export interface DailyActivity {
       notes: string;
       completed: boolean;
     }[];
+  };
+  todayWorkouts?: DailyActivityWorkout[];
+  cheatMeals?: {
+    fastFood: boolean;
+    sweets: boolean;
+    sugaryDrinks: boolean;
+    snacking: boolean;
   };
 }
 
@@ -224,7 +249,16 @@ export class DataService {
         shake: { items: markAsPrescribed(dietPlan?.shake || []), completed: false }
       },
       caloriesConsumed: 0,
-      caloriesBurned: 0
+      caloriesBurned: 0,
+      sleepHours: 0,
+      waterIntake: 0,
+      todayWorkouts: [],
+      cheatMeals: {
+        fastFood: false,
+        sweets: false,
+        sugaryDrinks: false,
+        snacking: false
+      }
     };
   }
 
