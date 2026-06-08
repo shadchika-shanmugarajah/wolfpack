@@ -1,5 +1,5 @@
 [build]
-  publish = "dist/gym-tracker/browser"
+  publish = "dist/wolfpack/browser"
   command = "npm run build"
 
 [[redirects]]

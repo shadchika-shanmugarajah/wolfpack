@@ -42,7 +42,7 @@ A modern, responsive web dashboard for a Gym Trainer Management System with an a
 
 1. Navigate to the project directory:
 ```bash
-cd gym-tracker
+cd wolfpack
 ```
 
 2. Install dependencies:
